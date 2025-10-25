@@ -51,6 +51,7 @@ export default function Layout({ children }: LayoutProps) {
     { path: '/settings', icon: Settings, label: 'Settings' },
   ];
 
+  // Add organization management for super admins
   if (isSuperAdmin) {
     navItems.push({ path: '/organizations', icon: Building2, label: 'Organizations' });
   }

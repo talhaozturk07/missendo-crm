@@ -11,6 +11,10 @@ import Leads from "./pages/Leads";
 import Patients from "./pages/Patients";
 import Appointments from "./pages/Appointments";
 import Settings from "./pages/Settings";
+import Organizations from "./pages/Organizations";
+import Treatments from "./pages/Treatments";
+import Transfers from "./pages/Transfers";
+import Hotels from "./pages/Hotels";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -111,6 +115,38 @@ const App = () => (
               element={
                 <ProtectedRoute>
                   <Settings />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/organizations"
+              element={
+                <ProtectedRoute>
+                  <Organizations />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/treatments"
+              element={
+                <ProtectedRoute>
+                  <Treatments />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/transfers"
+              element={
+                <ProtectedRoute>
+                  <Transfers />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/hotels"
+              element={
+                <ProtectedRoute>
+                  <Hotels />
                 </ProtectedRoute>
               }
             />
