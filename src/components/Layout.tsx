@@ -20,6 +20,9 @@ import {
   LogOut,
   UserCircle,
   ClipboardList,
+  Stethoscope,
+  Car,
+  Hotel,
 } from 'lucide-react';
 import { signOut } from '@/lib/auth';
 import { useToast } from '@/hooks/use-toast';
@@ -48,7 +51,6 @@ export default function Layout({ children }: LayoutProps) {
     { path: '/leads', icon: ClipboardList, label: 'Leads' },
     { path: '/patients', icon: Users, label: 'Patients' },
     { path: '/appointments', icon: Calendar, label: 'Appointments' },
-    { path: '/settings', icon: Settings, label: 'Settings' },
   ];
 
   // Add organization management for super admins
@@ -79,7 +81,7 @@ export default function Layout({ children }: LayoutProps) {
           </div>
 
           {/* Navigation */}
-          <nav className="flex-1 p-4 space-y-1">
+          <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
             {navItems.map((item) => {
               const Icon = item.icon;
               const isActive = location.pathname === item.path;
@@ -99,6 +101,57 @@ export default function Layout({ children }: LayoutProps) {
                 </Link>
               );
             })}
+
+            {/* Services Section */}
+            <div className="pt-4 mt-4 border-t border-sidebar-border">
+              <p className="px-4 text-xs font-semibold text-sidebar-foreground/50 uppercase mb-2">
+                Services
+              </p>
+              <Link
+                to="/treatments"
+                className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
+                  location.pathname === '/treatments'
+                    ? 'bg-sidebar-accent text-sidebar-accent-foreground'
+                    : 'text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground'
+                }`}
+              >
+                <Stethoscope className="w-5 h-5" />
+                <span className="font-medium">Treatments</span>
+              </Link>
+              <Link
+                to="/transfers"
+                className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
+                  location.pathname === '/transfers'
+                    ? 'bg-sidebar-accent text-sidebar-accent-foreground'
+                    : 'text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground'
+                }`}
+              >
+                <Car className="w-5 h-5" />
+                <span className="font-medium">Transfers</span>
+              </Link>
+              <Link
+                to="/hotels"
+                className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
+                  location.pathname === '/hotels'
+                    ? 'bg-sidebar-accent text-sidebar-accent-foreground'
+                    : 'text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground'
+                }`}
+              >
+                <Hotel className="w-5 h-5" />
+                <span className="font-medium">Hotels</span>
+              </Link>
+              <Link
+                to="/settings"
+                className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
+                  location.pathname === '/settings'
+                    ? 'bg-sidebar-accent text-sidebar-accent-foreground'
+                    : 'text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground'
+                }`}
+              >
+                <Settings className="w-5 h-5" />
+                <span className="font-medium">Settings</span>
+              </Link>
+            </div>
           </nav>
 
           {/* User Profile */}
@@ -122,11 +175,7 @@ export default function Layout({ children }: LayoutProps) {
               <DropdownMenuContent align="end" className="w-56">
                 <DropdownMenuLabel>My Account</DropdownMenuLabel>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem>
-                  <UserCircle className="mr-2 h-4 w-4" />
-                  <span>Profile</span>
-                </DropdownMenuItem>
-                <DropdownMenuItem>
+                <DropdownMenuItem onClick={() => navigate('/settings')}>
                   <Settings className="mr-2 h-4 w-4" />
                   <span>Settings</span>
                 </DropdownMenuItem>
