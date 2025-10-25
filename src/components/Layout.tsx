@@ -26,6 +26,7 @@ import {
 } from 'lucide-react';
 import { signOut } from '@/lib/auth';
 import { useToast } from '@/hooks/use-toast';
+import Header from '@/components/Header';
 
 interface LayoutProps {
   children: ReactNode;
@@ -192,6 +193,7 @@ export default function Layout({ children }: LayoutProps) {
 
       {/* Main Content */}
       <main className="ml-64 min-h-screen">
+        <Header />
         <div className="p-8">
           {children}
         </div>
