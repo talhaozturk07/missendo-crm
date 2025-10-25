@@ -14,16 +14,699 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      appointments: {
+        Row: {
+          appointment_date: string
+          created_at: string | null
+          created_by: string | null
+          duration_minutes: number | null
+          has_companion: boolean | null
+          hotel_id: string | null
+          id: string
+          lead_id: string | null
+          nights_count: number | null
+          notes: string | null
+          organization_id: string
+          patient_id: string
+          status: Database["public"]["Enums"]["appointment_status"] | null
+          transfer_id: string | null
+          treatment_id: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          appointment_date: string
+          created_at?: string | null
+          created_by?: string | null
+          duration_minutes?: number | null
+          has_companion?: boolean | null
+          hotel_id?: string | null
+          id?: string
+          lead_id?: string | null
+          nights_count?: number | null
+          notes?: string | null
+          organization_id: string
+          patient_id: string
+          status?: Database["public"]["Enums"]["appointment_status"] | null
+          transfer_id?: string | null
+          treatment_id?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          appointment_date?: string
+          created_at?: string | null
+          created_by?: string | null
+          duration_minutes?: number | null
+          has_companion?: boolean | null
+          hotel_id?: string | null
+          id?: string
+          lead_id?: string | null
+          nights_count?: number | null
+          notes?: string | null
+          organization_id?: string
+          patient_id?: string
+          status?: Database["public"]["Enums"]["appointment_status"] | null
+          transfer_id?: string | null
+          treatment_id?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "appointments_hotel_id_fkey"
+            columns: ["hotel_id"]
+            isOneToOne: false
+            referencedRelation: "hotels"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "appointments_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "appointments_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "appointments_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "patients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "appointments_transfer_id_fkey"
+            columns: ["transfer_id"]
+            isOneToOne: false
+            referencedRelation: "transfer_services"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "appointments_treatment_id_fkey"
+            columns: ["treatment_id"]
+            isOneToOne: false
+            referencedRelation: "treatments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      financial_records: {
+        Row: {
+          appointment_id: string | null
+          companion_cost: number | null
+          created_at: string | null
+          currency: string | null
+          hotel_cost: number | null
+          id: string
+          notes: string | null
+          organization_id: string
+          patient_id: string
+          payment_status: string | null
+          total_amount: number
+          total_discount: number | null
+          transfer_cost: number | null
+          treatment_cost: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          appointment_id?: string | null
+          companion_cost?: number | null
+          created_at?: string | null
+          currency?: string | null
+          hotel_cost?: number | null
+          id?: string
+          notes?: string | null
+          organization_id: string
+          patient_id: string
+          payment_status?: string | null
+          total_amount: number
+          total_discount?: number | null
+          transfer_cost?: number | null
+          treatment_cost?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          appointment_id?: string | null
+          companion_cost?: number | null
+          created_at?: string | null
+          currency?: string | null
+          hotel_cost?: number | null
+          id?: string
+          notes?: string | null
+          organization_id?: string
+          patient_id?: string
+          payment_status?: string | null
+          total_amount?: number
+          total_discount?: number | null
+          transfer_cost?: number | null
+          treatment_cost?: number | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "financial_records_appointment_id_fkey"
+            columns: ["appointment_id"]
+            isOneToOne: false
+            referencedRelation: "appointments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "financial_records_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "financial_records_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "patients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      hotels: {
+        Row: {
+          address: string | null
+          amenities: string | null
+          city: string | null
+          companion_price: number | null
+          created_at: string | null
+          currency: string | null
+          hotel_name: string
+          id: string
+          is_active: boolean | null
+          organization_id: string
+          price_per_night: number
+          updated_at: string | null
+        }
+        Insert: {
+          address?: string | null
+          amenities?: string | null
+          city?: string | null
+          companion_price?: number | null
+          created_at?: string | null
+          currency?: string | null
+          hotel_name: string
+          id?: string
+          is_active?: boolean | null
+          organization_id: string
+          price_per_night: number
+          updated_at?: string | null
+        }
+        Update: {
+          address?: string | null
+          amenities?: string | null
+          city?: string | null
+          companion_price?: number | null
+          created_at?: string | null
+          currency?: string | null
+          hotel_name?: string
+          id?: string
+          is_active?: boolean | null
+          organization_id?: string
+          price_per_night?: number
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "hotels_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      leads: {
+        Row: {
+          assigned_by_missendo: boolean | null
+          assigned_to: string | null
+          contacted_at: string | null
+          country: string | null
+          created_at: string | null
+          created_by: string | null
+          email: string | null
+          first_name: string
+          id: string
+          last_name: string
+          notes: string | null
+          organization_id: string
+          phone: string
+          rejection_reason: string | null
+          source: string | null
+          status: Database["public"]["Enums"]["lead_status"] | null
+          updated_at: string | null
+        }
+        Insert: {
+          assigned_by_missendo?: boolean | null
+          assigned_to?: string | null
+          contacted_at?: string | null
+          country?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          email?: string | null
+          first_name: string
+          id?: string
+          last_name: string
+          notes?: string | null
+          organization_id: string
+          phone: string
+          rejection_reason?: string | null
+          source?: string | null
+          status?: Database["public"]["Enums"]["lead_status"] | null
+          updated_at?: string | null
+        }
+        Update: {
+          assigned_by_missendo?: boolean | null
+          assigned_to?: string | null
+          contacted_at?: string | null
+          country?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          email?: string | null
+          first_name?: string
+          id?: string
+          last_name?: string
+          notes?: string | null
+          organization_id?: string
+          phone?: string
+          rejection_reason?: string | null
+          source?: string | null
+          status?: Database["public"]["Enums"]["lead_status"] | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "leads_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      organizations: {
+        Row: {
+          ad_api_key: string | null
+          address: string | null
+          city: string | null
+          country: string | null
+          created_at: string | null
+          email: string | null
+          id: string
+          is_active: boolean | null
+          name: string
+          phone: string | null
+          updated_at: string | null
+          whatsapp_api_key: string | null
+        }
+        Insert: {
+          ad_api_key?: string | null
+          address?: string | null
+          city?: string | null
+          country?: string | null
+          created_at?: string | null
+          email?: string | null
+          id?: string
+          is_active?: boolean | null
+          name: string
+          phone?: string | null
+          updated_at?: string | null
+          whatsapp_api_key?: string | null
+        }
+        Update: {
+          ad_api_key?: string | null
+          address?: string | null
+          city?: string | null
+          country?: string | null
+          created_at?: string | null
+          email?: string | null
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          phone?: string | null
+          updated_at?: string | null
+          whatsapp_api_key?: string | null
+        }
+        Relationships: []
+      }
+      patient_treatments: {
+        Row: {
+          appointment_id: string | null
+          created_at: string | null
+          currency: string | null
+          discount_type: Database["public"]["Enums"]["discount_type"] | null
+          discount_value: number | null
+          final_price: number
+          id: string
+          notes: string | null
+          patient_id: string
+          performed_at: string | null
+          price: number
+          treatment_id: string
+          updated_at: string | null
+        }
+        Insert: {
+          appointment_id?: string | null
+          created_at?: string | null
+          currency?: string | null
+          discount_type?: Database["public"]["Enums"]["discount_type"] | null
+          discount_value?: number | null
+          final_price: number
+          id?: string
+          notes?: string | null
+          patient_id: string
+          performed_at?: string | null
+          price: number
+          treatment_id: string
+          updated_at?: string | null
+        }
+        Update: {
+          appointment_id?: string | null
+          created_at?: string | null
+          currency?: string | null
+          discount_type?: Database["public"]["Enums"]["discount_type"] | null
+          discount_value?: number | null
+          final_price?: number
+          id?: string
+          notes?: string | null
+          patient_id?: string
+          performed_at?: string | null
+          price?: number
+          treatment_id?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "patient_treatments_appointment_id_fkey"
+            columns: ["appointment_id"]
+            isOneToOne: false
+            referencedRelation: "appointments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "patient_treatments_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "patients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "patient_treatments_treatment_id_fkey"
+            columns: ["treatment_id"]
+            isOneToOne: false
+            referencedRelation: "treatments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      patients: {
+        Row: {
+          address: string | null
+          allergies: string | null
+          country: string | null
+          created_at: string | null
+          created_by: string | null
+          date_of_birth: string | null
+          email: string | null
+          first_name: string
+          gender: string | null
+          id: string
+          last_name: string
+          lead_id: string | null
+          medical_condition: string | null
+          notes: string | null
+          organization_id: string
+          phone: string
+          photo_url: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          address?: string | null
+          allergies?: string | null
+          country?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          date_of_birth?: string | null
+          email?: string | null
+          first_name: string
+          gender?: string | null
+          id?: string
+          last_name: string
+          lead_id?: string | null
+          medical_condition?: string | null
+          notes?: string | null
+          organization_id: string
+          phone: string
+          photo_url?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          address?: string | null
+          allergies?: string | null
+          country?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          date_of_birth?: string | null
+          email?: string | null
+          first_name?: string
+          gender?: string | null
+          id?: string
+          last_name?: string
+          lead_id?: string | null
+          medical_condition?: string | null
+          notes?: string | null
+          organization_id?: string
+          phone?: string
+          photo_url?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "patients_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "patients_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          created_at: string | null
+          email: string
+          first_name: string
+          id: string
+          is_active: boolean | null
+          last_name: string
+          organization_id: string | null
+          phone: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string | null
+          email: string
+          first_name: string
+          id: string
+          is_active?: boolean | null
+          last_name: string
+          organization_id?: string | null
+          phone?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string | null
+          email?: string
+          first_name?: string
+          id?: string
+          is_active?: boolean | null
+          last_name?: string
+          organization_id?: string | null
+          phone?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "profiles_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      transfer_services: {
+        Row: {
+          company_name: string
+          created_at: string | null
+          currency: string | null
+          id: string
+          is_active: boolean | null
+          notes: string | null
+          organization_id: string
+          price: number
+          service_type: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          company_name: string
+          created_at?: string | null
+          currency?: string | null
+          id?: string
+          is_active?: boolean | null
+          notes?: string | null
+          organization_id: string
+          price: number
+          service_type?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          company_name?: string
+          created_at?: string | null
+          currency?: string | null
+          id?: string
+          is_active?: boolean | null
+          notes?: string | null
+          organization_id?: string
+          price?: number
+          service_type?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "transfer_services_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      treatments: {
+        Row: {
+          base_price: number
+          created_at: string | null
+          currency: string | null
+          description: string | null
+          duration_minutes: number | null
+          id: string
+          is_active: boolean | null
+          name: string
+          organization_id: string
+          updated_at: string | null
+        }
+        Insert: {
+          base_price: number
+          created_at?: string | null
+          currency?: string | null
+          description?: string | null
+          duration_minutes?: number | null
+          id?: string
+          is_active?: boolean | null
+          name: string
+          organization_id: string
+          updated_at?: string | null
+        }
+        Update: {
+          base_price?: number
+          created_at?: string | null
+          currency?: string | null
+          description?: string | null
+          duration_minutes?: number | null
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          organization_id?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "treatments_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_roles: {
+        Row: {
+          created_at: string | null
+          id: string
+          organization_id: string | null
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          organization_id?: string | null
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          organization_id?: string | null
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_roles_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      get_user_organization: { Args: { _user_id: string }; Returns: string }
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "super_admin" | "clinic_admin" | "clinic_user"
+      appointment_status:
+        | "scheduled"
+        | "confirmed"
+        | "completed"
+        | "cancelled"
+        | "no_show"
+      discount_type: "percentage" | "fixed_amount"
+      lead_status:
+        | "new"
+        | "contacted"
+        | "no_contact"
+        | "appointment_scheduled"
+        | "converted"
+        | "rejected"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +833,24 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["super_admin", "clinic_admin", "clinic_user"],
+      appointment_status: [
+        "scheduled",
+        "confirmed",
+        "completed",
+        "cancelled",
+        "no_show",
+      ],
+      discount_type: ["percentage", "fixed_amount"],
+      lead_status: [
+        "new",
+        "contacted",
+        "no_contact",
+        "appointment_scheduled",
+        "converted",
+        "rejected",
+      ],
+    },
   },
 } as const
