@@ -24,6 +24,9 @@ interface Appointment {
   appointment_date: string;
   status: string;
   notes: string;
+  treatments: { name: string } | null;
+  hotels: { hotel_name: string } | null;
+  transfer_services: { company_name: string } | null;
 }
 
 interface Document {
@@ -64,7 +67,7 @@ export function PatientDetails({ patientId, onClose }: PatientDetailsProps) {
     try {
       setLoading(true);
       const [appointmentsRes, documentsRes, hotelsRes, transfersRes, treatmentsRes] = await Promise.all([
-        supabase.from('appointments').select('*').eq('patient_id', patientId),
+        supabase.from('appointments').select('*, treatments(name), hotels(hotel_name), transfer_services(company_name)').eq('patient_id', patientId),
         supabase.from('patient_documents').select('*').eq('patient_id', patientId),
         supabase.from('hotels').select('*').eq('organization_id', profile?.organization_id),
         supabase.from('transfer_services').select('*').eq('organization_id', profile?.organization_id),
@@ -350,8 +353,11 @@ export function PatientDetails({ patientId, onClose }: PatientDetailsProps) {
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>Date</TableHead>
+                      <TableHead>Date & Time</TableHead>
                       <TableHead>Status</TableHead>
+                      <TableHead>Treatment</TableHead>
+                      <TableHead>Hotel</TableHead>
+                      <TableHead>Transfer</TableHead>
                       <TableHead>Notes</TableHead>
                       <TableHead>Actions</TableHead>
                     </TableRow>
@@ -361,6 +367,9 @@ export function PatientDetails({ patientId, onClose }: PatientDetailsProps) {
                       <TableRow key={apt.id}>
                         <TableCell>{format(new Date(apt.appointment_date), 'PPP p')}</TableCell>
                         <TableCell className="capitalize">{apt.status}</TableCell>
+                        <TableCell>{apt.treatments?.name || '-'}</TableCell>
+                        <TableCell>{apt.hotels?.hotel_name || '-'}</TableCell>
+                        <TableCell>{apt.transfer_services?.company_name || '-'}</TableCell>
                         <TableCell>{apt.notes || '-'}</TableCell>
                         <TableCell>
                           <Button

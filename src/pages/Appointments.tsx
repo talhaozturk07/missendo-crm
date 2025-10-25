@@ -22,6 +22,12 @@ interface Appointment {
   treatments: {
     name: string;
   } | null;
+  hotels: {
+    hotel_name: string;
+  } | null;
+  transfer_services: {
+    company_name: string;
+  } | null;
 }
 
 const statusColors: Record<string, string> = {
@@ -55,7 +61,9 @@ export default function Appointments() {
         .select(`
           *,
           patients (first_name, last_name),
-          treatments (name)
+          treatments (name),
+          hotels (hotel_name),
+          transfer_services (company_name)
         `)
         .gte('appointment_date', startDate.toISOString())
         .lte('appointment_date', endDate.toISOString())
@@ -166,12 +174,12 @@ export default function Appointments() {
                           <div className={`text-sm font-medium mb-1 ${isToday(day) ? 'text-primary' : ''}`}>
                             {format(day, 'd')}
                           </div>
-                          {dayAppointments.slice(0, 2).map((apt, i) => (
+                           {dayAppointments.slice(0, 2).map((apt, i) => (
                             <div
                               key={i}
                               className="text-xs bg-primary/10 text-primary px-1 py-0.5 rounded mb-1 truncate"
                             >
-                              {format(new Date(apt.appointment_date), 'HH:mm')}
+                              {format(new Date(apt.appointment_date), 'p')}
                             </div>
                           ))}
                           {dayAppointments.length > 2 && (
@@ -221,12 +229,22 @@ export default function Appointments() {
                         <div className="space-y-1 text-xs text-muted-foreground">
                           <div className="flex items-center gap-1">
                             <CalendarIcon className="w-3 h-3" />
-                            <span>{format(new Date(apt.appointment_date), 'MMM dd, yyyy HH:mm')}</span>
+                            <span>{format(new Date(apt.appointment_date), 'PPP p')}</span>
                           </div>
                           {apt.treatments && (
                             <div className="flex items-center gap-1">
                               <MapPin className="w-3 h-3" />
-                              <span>{apt.treatments.name}</span>
+                              <span>Treatment: {apt.treatments.name}</span>
+                            </div>
+                          )}
+                          {apt.hotels && (
+                            <div className="text-xs">
+                              Hotel: {apt.hotels.hotel_name}
+                            </div>
+                          )}
+                          {apt.transfer_services && (
+                            <div className="text-xs">
+                              Transfer: {apt.transfer_services.company_name}
                             </div>
                           )}
                         </div>
