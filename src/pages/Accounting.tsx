@@ -21,7 +21,16 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Search, DollarSign, TrendingUp, TrendingDown, FileText } from 'lucide-react';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { Search, DollarSign, TrendingUp, TrendingDown, FileText, Plus, ArrowUpCircle, ArrowDownCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from '@/components/ui/skeleton';
 
@@ -44,17 +53,79 @@ interface FinancialRecord {
   };
 }
 
+interface IncomeExpense {
+  id: string;
+  type: 'income' | 'expense';
+  category: string;
+  amount: number;
+  currency: string;
+  description: string | null;
+  date: string;
+  reference_type: string | null;
+  notes: string | null;
+}
+
+const INCOME_CATEGORIES = [
+  'Treatment Payment',
+  'Service Fee',
+  'Consultation Fee',
+  'Product Sales',
+  'Other Income'
+];
+
+const EXPENSE_CATEGORIES = [
+  'Staff Salary',
+  'Medical Supplies',
+  'Equipment Purchase',
+  'Rent & Utilities',
+  'Marketing',
+  'Transportation',
+  'Administrative',
+  'Other Expense'
+];
+
+const REFERENCE_TYPES = [
+  { value: 'appointment', label: 'Appointment' },
+  { value: 'patient', label: 'Patient' },
+  { value: 'treatment', label: 'Treatment' },
+  { value: 'transfer', label: 'Transfer' },
+  { value: 'hotel', label: 'Hotel' },
+  { value: 'other', label: 'Other' }
+];
+
 export default function Accounting() {
   const { profile } = useAuth();
   const { toast } = useToast();
   const [records, setRecords] = useState<FinancialRecord[]>([]);
+  const [incomeExpenses, setIncomeExpenses] = useState<IncomeExpense[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [isIncomeDialogOpen, setIsIncomeDialogOpen] = useState(false);
+  const [isExpenseDialogOpen, setIsExpenseDialogOpen] = useState(false);
+  
+  const [incomeForm, setIncomeForm] = useState({
+    category: '',
+    amount: '',
+    currency: 'USD',
+    description: '',
+    reference_type: '',
+    notes: ''
+  });
+  
+  const [expenseForm, setExpenseForm] = useState({
+    category: '',
+    amount: '',
+    currency: 'USD',
+    description: '',
+    reference_type: '',
+    notes: ''
+  });
 
   useEffect(() => {
     if (profile?.organization_id) {
       fetchRecords();
+      fetchIncomeExpenses();
     }
   }, [profile?.organization_id]);
 
@@ -87,6 +158,105 @@ export default function Accounting() {
     }
   };
 
+  const fetchIncomeExpenses = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('income_expenses')
+        .select('*')
+        .eq('organization_id', profile?.organization_id)
+        .order('date', { ascending: false });
+
+      if (error) throw error;
+      setIncomeExpenses((data as IncomeExpense[]) || []);
+    } catch (error) {
+      console.error('Error fetching income/expenses:', error);
+    }
+  };
+
+  const handleAddIncome = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      const { error } = await supabase.from('income_expenses').insert([{
+        organization_id: profile?.organization_id,
+        type: 'income',
+        category: incomeForm.category,
+        amount: parseFloat(incomeForm.amount),
+        currency: incomeForm.currency,
+        description: incomeForm.description || null,
+        reference_type: incomeForm.reference_type || null,
+        notes: incomeForm.notes || null,
+        created_by: profile?.id
+      }]);
+
+      if (error) throw error;
+
+      toast({
+        title: 'Success',
+        description: 'Income added successfully',
+      });
+
+      setIsIncomeDialogOpen(false);
+      setIncomeForm({
+        category: '',
+        amount: '',
+        currency: 'USD',
+        description: '',
+        reference_type: '',
+        notes: ''
+      });
+      fetchIncomeExpenses();
+    } catch (error) {
+      console.error('Error adding income:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to add income',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const handleAddExpense = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      const { error } = await supabase.from('income_expenses').insert([{
+        organization_id: profile?.organization_id,
+        type: 'expense',
+        category: expenseForm.category,
+        amount: parseFloat(expenseForm.amount),
+        currency: expenseForm.currency,
+        description: expenseForm.description || null,
+        reference_type: expenseForm.reference_type || null,
+        notes: expenseForm.notes || null,
+        created_by: profile?.id
+      }]);
+
+      if (error) throw error;
+
+      toast({
+        title: 'Success',
+        description: 'Expense added successfully',
+      });
+
+      setIsExpenseDialogOpen(false);
+      setExpenseForm({
+        category: '',
+        amount: '',
+        currency: 'USD',
+        description: '',
+        reference_type: '',
+        notes: ''
+      });
+      fetchIncomeExpenses();
+    } catch (error) {
+      console.error('Error adding expense:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to add expense',
+        variant: 'destructive',
+      });
+    }
+  };
+
   const filteredRecords = records.filter((record) => {
     const matchesSearch =
       record.patient?.first_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -96,6 +266,16 @@ export default function Accounting() {
     
     return matchesSearch && matchesStatus;
   });
+
+  const totalIncome = incomeExpenses
+    .filter(item => item.type === 'income')
+    .reduce((sum, item) => sum + Number(item.amount), 0);
+  
+  const totalExpense = incomeExpenses
+    .filter(item => item.type === 'expense')
+    .reduce((sum, item) => sum + Number(item.amount), 0);
+
+  const netProfit = totalIncome - totalExpense;
 
   const totalRevenue = filteredRecords.reduce((sum, record) => sum + Number(record.total_amount), 0);
   const totalPaid = filteredRecords
@@ -121,52 +301,309 @@ export default function Accounting() {
   return (
     <Layout>
       <div className="space-y-6">
-        <div>
-          <h1 className="text-3xl font-bold text-foreground">Accounting</h1>
-          <p className="text-muted-foreground">Manage financial records and transactions</p>
+        <div className="flex justify-between items-start">
+          <div>
+            <h1 className="text-3xl font-bold text-foreground">Accounting</h1>
+            <p className="text-muted-foreground">Manage financial records and transactions</p>
+          </div>
+          <div className="flex gap-2">
+            <Dialog open={isIncomeDialogOpen} onOpenChange={setIsIncomeDialogOpen}>
+              <DialogTrigger asChild>
+                <Button className="bg-green-600 hover:bg-green-700">
+                  <ArrowUpCircle className="w-4 h-4 mr-2" />
+                  Add Income
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Add Income</DialogTitle>
+                </DialogHeader>
+                <form onSubmit={handleAddIncome} className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="income-category">Category *</Label>
+                    <Select value={incomeForm.category} onValueChange={(value) => setIncomeForm({...incomeForm, category: value})}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select category" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {INCOME_CATEGORIES.map(cat => (
+                          <SelectItem key={cat} value={cat}>{cat}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="income-amount">Amount *</Label>
+                      <Input
+                        id="income-amount"
+                        type="number"
+                        step="0.01"
+                        value={incomeForm.amount}
+                        onChange={(e) => setIncomeForm({...incomeForm, amount: e.target.value})}
+                        required
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="income-currency">Currency</Label>
+                      <Select value={incomeForm.currency} onValueChange={(value) => setIncomeForm({...incomeForm, currency: value})}>
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="USD">USD</SelectItem>
+                          <SelectItem value="EUR">EUR</SelectItem>
+                          <SelectItem value="TRY">TRY</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="income-description">Description</Label>
+                    <Input
+                      id="income-description"
+                      value={incomeForm.description}
+                      onChange={(e) => setIncomeForm({...incomeForm, description: e.target.value})}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="income-reference">Reference Type</Label>
+                    <Select value={incomeForm.reference_type} onValueChange={(value) => setIncomeForm({...incomeForm, reference_type: value})}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select reference" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {REFERENCE_TYPES.map(ref => (
+                          <SelectItem key={ref.value} value={ref.value}>{ref.label}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="income-notes">Notes</Label>
+                    <Textarea
+                      id="income-notes"
+                      value={incomeForm.notes}
+                      onChange={(e) => setIncomeForm({...incomeForm, notes: e.target.value})}
+                      rows={3}
+                    />
+                  </div>
+                  <div className="flex justify-end gap-2">
+                    <Button type="button" variant="outline" onClick={() => setIsIncomeDialogOpen(false)}>
+                      Cancel
+                    </Button>
+                    <Button type="submit">Add Income</Button>
+                  </div>
+                </form>
+              </DialogContent>
+            </Dialog>
+
+            <Dialog open={isExpenseDialogOpen} onOpenChange={setIsExpenseDialogOpen}>
+              <DialogTrigger asChild>
+                <Button variant="destructive">
+                  <ArrowDownCircle className="w-4 h-4 mr-2" />
+                  Add Expense
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Add Expense</DialogTitle>
+                </DialogHeader>
+                <form onSubmit={handleAddExpense} className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="expense-category">Category *</Label>
+                    <Select value={expenseForm.category} onValueChange={(value) => setExpenseForm({...expenseForm, category: value})}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select category" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {EXPENSE_CATEGORIES.map(cat => (
+                          <SelectItem key={cat} value={cat}>{cat}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="expense-amount">Amount *</Label>
+                      <Input
+                        id="expense-amount"
+                        type="number"
+                        step="0.01"
+                        value={expenseForm.amount}
+                        onChange={(e) => setExpenseForm({...expenseForm, amount: e.target.value})}
+                        required
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="expense-currency">Currency</Label>
+                      <Select value={expenseForm.currency} onValueChange={(value) => setExpenseForm({...expenseForm, currency: value})}>
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="USD">USD</SelectItem>
+                          <SelectItem value="EUR">EUR</SelectItem>
+                          <SelectItem value="TRY">TRY</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="expense-description">Description</Label>
+                    <Input
+                      id="expense-description"
+                      value={expenseForm.description}
+                      onChange={(e) => setExpenseForm({...expenseForm, description: e.target.value})}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="expense-reference">Reference Type</Label>
+                    <Select value={expenseForm.reference_type} onValueChange={(value) => setExpenseForm({...expenseForm, reference_type: value})}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select reference" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {REFERENCE_TYPES.map(ref => (
+                          <SelectItem key={ref.value} value={ref.value}>{ref.label}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="expense-notes">Notes</Label>
+                    <Textarea
+                      id="expense-notes"
+                      value={expenseForm.notes}
+                      onChange={(e) => setExpenseForm({...expenseForm, notes: e.target.value})}
+                      rows={3}
+                    />
+                  </div>
+                  <div className="flex justify-end gap-2">
+                    <Button type="button" variant="outline" onClick={() => setIsExpenseDialogOpen(false)}>
+                      Cancel
+                    </Button>
+                    <Button type="submit" variant="destructive">Add Expense</Button>
+                  </div>
+                </form>
+              </DialogContent>
+            </Dialog>
+          </div>
         </div>
 
         {/* Stats Cards */}
-        <div className="grid gap-4 md:grid-cols-3">
+        <div className="grid gap-4 md:grid-cols-4">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total Revenue</CardTitle>
-              <DollarSign className="h-4 w-4 text-muted-foreground" />
+              <CardTitle className="text-sm font-medium">Total Income</CardTitle>
+              <ArrowUpCircle className="h-4 w-4 text-green-600" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">${totalRevenue.toFixed(2)}</div>
+              <div className="text-2xl font-bold text-green-600">${totalIncome.toFixed(2)}</div>
               <p className="text-xs text-muted-foreground">
-                From {filteredRecords.length} records
+                {incomeExpenses.filter(i => i.type === 'income').length} transactions
               </p>
             </CardContent>
           </Card>
 
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Paid</CardTitle>
-              <TrendingUp className="h-4 w-4 text-green-600" />
+              <CardTitle className="text-sm font-medium">Total Expenses</CardTitle>
+              <ArrowDownCircle className="h-4 w-4 text-red-600" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-green-600">${totalPaid.toFixed(2)}</div>
+              <div className="text-2xl font-bold text-red-600">${totalExpense.toFixed(2)}</div>
               <p className="text-xs text-muted-foreground">
-                {filteredRecords.filter(r => r.payment_status === 'paid').length} transactions
+                {incomeExpenses.filter(i => i.type === 'expense').length} transactions
               </p>
             </CardContent>
           </Card>
 
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Pending</CardTitle>
-              <TrendingDown className="h-4 w-4 text-orange-600" />
+              <CardTitle className="text-sm font-medium">Net Profit</CardTitle>
+              <DollarSign className={`h-4 w-4 ${netProfit >= 0 ? 'text-green-600' : 'text-red-600'}`} />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-orange-600">${totalPending.toFixed(2)}</div>
+              <div className={`text-2xl font-bold ${netProfit >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                ${Math.abs(netProfit).toFixed(2)}
+              </div>
               <p className="text-xs text-muted-foreground">
-                {filteredRecords.filter(r => r.payment_status === 'pending').length} pending
+                {netProfit >= 0 ? 'Profit' : 'Loss'}
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Patient Payments</CardTitle>
+              <TrendingUp className="h-4 w-4 text-blue-600" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">${totalPaid.toFixed(2)}</div>
+              <p className="text-xs text-muted-foreground">
+                {filteredRecords.filter(r => r.payment_status === 'paid').length} paid
               </p>
             </CardContent>
           </Card>
         </div>
+
+        {/* Income/Expense Transactions */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <FileText className="h-5 w-5" />
+              Income & Expenses
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {incomeExpenses.length === 0 ? (
+              <div className="text-center py-12">
+                <DollarSign className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+                <p className="text-muted-foreground">No income or expenses recorded yet</p>
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Type</TableHead>
+                      <TableHead>Category</TableHead>
+                      <TableHead>Description</TableHead>
+                      <TableHead>Reference</TableHead>
+                      <TableHead>Amount</TableHead>
+                      <TableHead>Date</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {incomeExpenses.map((item) => (
+                      <TableRow key={item.id}>
+                        <TableCell>
+                          <Badge variant={item.type === 'income' ? 'default' : 'destructive'}>
+                            {item.type === 'income' ? (
+                              <><ArrowUpCircle className="w-3 h-3 mr-1" /> Income</>
+                            ) : (
+                              <><ArrowDownCircle className="w-3 h-3 mr-1" /> Expense</>
+                            )}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="font-medium">{item.category}</TableCell>
+                        <TableCell>{item.description || '-'}</TableCell>
+                        <TableCell className="capitalize">{item.reference_type || '-'}</TableCell>
+                        <TableCell className={`font-bold ${item.type === 'income' ? 'text-green-600' : 'text-red-600'}`}>
+                          {item.type === 'income' ? '+' : '-'}{item.currency} {Number(item.amount).toFixed(2)}
+                        </TableCell>
+                        <TableCell>
+                          {new Date(item.date).toLocaleDateString()}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            )}
+          </CardContent>
+        </Card>
 
         {/* Filters */}
         <Card>

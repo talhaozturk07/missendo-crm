@@ -243,6 +243,57 @@ export type Database = {
           },
         ]
       }
+      income_expenses: {
+        Row: {
+          amount: number
+          category: string
+          created_at: string | null
+          created_by: string | null
+          currency: string | null
+          date: string
+          description: string | null
+          id: string
+          notes: string | null
+          organization_id: string
+          reference_id: string | null
+          reference_type: string | null
+          type: string
+          updated_at: string | null
+        }
+        Insert: {
+          amount: number
+          category: string
+          created_at?: string | null
+          created_by?: string | null
+          currency?: string | null
+          date?: string
+          description?: string | null
+          id?: string
+          notes?: string | null
+          organization_id: string
+          reference_id?: string | null
+          reference_type?: string | null
+          type: string
+          updated_at?: string | null
+        }
+        Update: {
+          amount?: number
+          category?: string
+          created_at?: string | null
+          created_by?: string | null
+          currency?: string | null
+          date?: string
+          description?: string | null
+          id?: string
+          notes?: string | null
+          organization_id?: string
+          reference_id?: string | null
+          reference_type?: string | null
+          type?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       leads: {
         Row: {
           assigned_by_missendo: boolean | null

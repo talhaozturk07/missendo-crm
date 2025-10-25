@@ -22,9 +22,10 @@ import {
 } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Plus, Search, User, Phone, Mail } from 'lucide-react';
+import { Plus, Search, User, Phone, Mail, Upload, X } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
+import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 
 interface Patient {
   id: string;
@@ -36,6 +37,7 @@ interface Patient {
   gender: string | null;
   country: string | null;
   medical_condition: string | null;
+  photo_url: string | null;
   created_at: string;
 }
 
@@ -60,7 +62,10 @@ export default function Patients() {
     medical_condition: '',
     allergies: '',
     notes: '',
+    photo_url: '',
   });
+  const [photoFile, setPhotoFile] = useState<File | null>(null);
+  const [photoPreview, setPhotoPreview] = useState<string>('');
 
   useEffect(() => {
     loadPatients();
@@ -92,6 +97,24 @@ export default function Patients() {
     }
   };
 
+  const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setPhotoFile(file);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setPhotoPreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleRemovePhoto = () => {
+    setPhotoFile(null);
+    setPhotoPreview('');
+    setFormData({ ...formData, photo_url: '' });
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -105,8 +128,30 @@ export default function Patients() {
     }
 
     try {
+      let photoUrl = formData.photo_url;
+
+      // Upload photo if a new file is selected
+      if (photoFile) {
+        const patientId = selectedPatient?.id || crypto.randomUUID();
+        const fileExt = photoFile.name.split('.').pop();
+        const fileName = `${patientId}/${Date.now()}.${fileExt}`;
+
+        const { error: uploadError } = await supabase.storage
+          .from('patient-photos')
+          .upload(fileName, photoFile, { upsert: true });
+
+        if (uploadError) throw uploadError;
+
+        const { data: { publicUrl } } = supabase.storage
+          .from('patient-photos')
+          .getPublicUrl(fileName);
+
+        photoUrl = publicUrl;
+      }
+
       const patientData = {
         ...formData,
+        photo_url: photoUrl || null,
         organization_id: profile.organization_id,
         created_by: profile.id,
         email: formData.email || null,
@@ -168,7 +213,10 @@ export default function Patients() {
       medical_condition: '',
       allergies: '',
       notes: '',
+      photo_url: '',
     });
+    setPhotoFile(null);
+    setPhotoPreview('');
     setSelectedPatient(null);
   };
 
@@ -195,7 +243,9 @@ export default function Patients() {
         medical_condition: data.medical_condition || '',
         allergies: data.allergies || '',
         notes: data.notes || '',
+        photo_url: data.photo_url || '',
       });
+      setPhotoPreview(data.photo_url || '');
     }
     
     setIsDialogOpen(true);
@@ -227,6 +277,41 @@ export default function Patients() {
                 <DialogTitle>{selectedPatient ? 'Edit Patient' : 'Add New Patient'}</DialogTitle>
               </DialogHeader>
               <form onSubmit={handleSubmit} className="space-y-4">
+                <div className="flex justify-center">
+                  <div className="relative">
+                    <Avatar className="w-24 h-24">
+                      <AvatarImage src={photoPreview || formData.photo_url || ''} />
+                      <AvatarFallback>
+                        <User className="w-12 h-12" />
+                      </AvatarFallback>
+                    </Avatar>
+                    {(photoPreview || formData.photo_url) && (
+                      <Button
+                        type="button"
+                        variant="destructive"
+                        size="icon"
+                        className="absolute -top-2 -right-2 h-6 w-6 rounded-full"
+                        onClick={handleRemovePhoto}
+                      >
+                        <X className="h-3 w-3" />
+                      </Button>
+                    )}
+                    <Label
+                      htmlFor="photo"
+                      className="absolute bottom-0 right-0 cursor-pointer bg-primary text-primary-foreground rounded-full p-2 hover:bg-primary/90"
+                    >
+                      <Upload className="h-4 w-4" />
+                      <Input
+                        id="photo"
+                        type="file"
+                        accept="image/*"
+                        onChange={handlePhotoChange}
+                        className="hidden"
+                      />
+                    </Label>
+                  </div>
+                </div>
+
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="first_name">First Name *</Label>
@@ -391,9 +476,12 @@ export default function Patients() {
                   <TableRow key={patient.id} className="cursor-pointer hover:bg-muted/50" onClick={() => handleEdit(patient)}>
                     <TableCell>
                       <div className="flex items-center gap-2">
-                        <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
-                          <User className="w-4 h-4 text-primary" />
-                        </div>
+                        <Avatar className="w-8 h-8">
+                          <AvatarImage src={patient.photo_url || ''} />
+                          <AvatarFallback className="bg-primary/10">
+                            <User className="w-4 h-4 text-primary" />
+                          </AvatarFallback>
+                        </Avatar>
                         <div>
                           <div className="font-medium">{patient.first_name} {patient.last_name}</div>
                           {patient.gender && (
