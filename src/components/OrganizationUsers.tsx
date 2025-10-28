@@ -26,7 +26,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { UserPlus, Users, Mail, Phone } from 'lucide-react';
+import { UserPlus, Users, Mail, Phone, KeyRound } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
 
@@ -196,6 +196,28 @@ export default function OrganizationUsers({ organizationId, organizationName }: 
     }
   };
 
+  const handleResetPassword = async (email: string) => {
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/auth`,
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: "Success",
+        description: `Password reset email sent to ${email}`,
+      });
+    } catch (error: any) {
+      console.error('Error sending reset email:', error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to send password reset email",
+        variant: "destructive",
+      });
+    }
+  };
+
   return (
     <>
       <Dialog open={isUsersDialogOpen} onOpenChange={setIsUsersDialogOpen}>
@@ -310,18 +332,19 @@ export default function OrganizationUsers({ organizationId, organizationName }: 
                     <TableHead>Role</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead>Created</TableHead>
+                    <TableHead>Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {loading ? (
                     <TableRow>
-                      <TableCell colSpan={5} className="text-center py-8">
+                      <TableCell colSpan={6} className="text-center py-8">
                         Loading users...
                       </TableCell>
                     </TableRow>
                   ) : users.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
+                      <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
                         No users found
                       </TableCell>
                     </TableRow>
@@ -361,6 +384,16 @@ export default function OrganizationUsers({ organizationId, organizationName }: 
                         </TableCell>
                         <TableCell className="text-sm text-muted-foreground">
                           {format(new Date(user.created_at), 'MMM dd, yyyy')}
+                        </TableCell>
+                        <TableCell>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleResetPassword(user.email)}
+                          >
+                            <KeyRound className="w-3 h-3 mr-2" />
+                            Reset Password
+                          </Button>
                         </TableCell>
                       </TableRow>
                     ))
