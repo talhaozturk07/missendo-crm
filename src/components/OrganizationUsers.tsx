@@ -242,6 +242,16 @@ export default function OrganizationUsers({ organizationId, organizationName }: 
         },
       });
 
+      // If user already exists, show specific error
+      if (authError?.message?.includes('already registered')) {
+        toast({
+          title: "User Already Exists",
+          description: "This email is already registered. Please contact a super admin to add this user to your organization.",
+          variant: "destructive",
+        });
+        return;
+      }
+
       if (authError) throw authError;
       if (!authData.user) throw new Error('User creation failed');
 

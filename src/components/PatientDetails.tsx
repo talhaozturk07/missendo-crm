@@ -403,11 +403,11 @@ export function PatientDetails({ patientId, onClose }: PatientDetailsProps) {
             <CardContent>
               <form onSubmit={handleUploadDocument} className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="document">File (PDF, PNG, JPEG) *</Label>
+                  <Label htmlFor="document">File (PDF, PNG, JPEG, STL) *</Label>
                   <Input
                     id="document"
                     type="file"
-                    accept=".pdf,.png,.jpg,.jpeg"
+                    accept=".pdf,.png,.jpg,.jpeg,.stl"
                     onChange={(e) => setDocumentFile(e.target.files?.[0] || null)}
                     required
                   />
