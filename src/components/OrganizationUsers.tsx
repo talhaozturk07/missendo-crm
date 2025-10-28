@@ -26,9 +26,11 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { UserPlus, Users, Mail, Phone, KeyRound } from 'lucide-react';
+import { UserPlus, Users, Mail, Phone, KeyRound, Edit } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
+import { useAuth } from '@/contexts/AuthContext';
+import { AppRole } from '@/lib/auth';
 
 interface OrganizationUsersProps {
   organizationId: string;
@@ -149,7 +151,10 @@ export default function OrganizationUsers({ organizationId, organizationName }: 
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isUsersDialogOpen, setIsUsersDialogOpen] = useState(false);
   const [selectedUserForReset, setSelectedUserForReset] = useState<User | null>(null);
+  const [selectedUserForRoleEdit, setSelectedUserForRoleEdit] = useState<User | null>(null);
+  const [newRoleForUser, setNewRoleForUser] = useState<AppRole>('clinic_user');
   const { toast } = useToast();
+  const { isSuperAdmin, isClinicAdmin } = useAuth();
 
   const [formData, setFormData] = useState({
     email: '',
@@ -157,7 +162,7 @@ export default function OrganizationUsers({ organizationId, organizationName }: 
     first_name: '',
     last_name: '',
     phone: '',
-    role: 'clinic_user' as 'clinic_admin' | 'clinic_user',
+    role: 'clinic_user' as AppRole,
   });
 
   const loadUsers = async () => {
@@ -403,6 +408,53 @@ export default function OrganizationUsers({ organizationId, organizationName }: 
     setSelectedUserForReset(user);
   };
 
+  const handleEditRoleClick = (user: User, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setSelectedUserForRoleEdit(user);
+    setNewRoleForUser(user.roles[0] as AppRole || 'clinic_user');
+  };
+
+  const handleUpdateRole = async () => {
+    if (!selectedUserForRoleEdit) return;
+
+    try {
+      // Delete existing roles for this user in this organization
+      const { error: deleteError } = await supabase
+        .from('user_roles')
+        .delete()
+        .eq('user_id', selectedUserForRoleEdit.id)
+        .eq('organization_id', organizationId);
+
+      if (deleteError) throw deleteError;
+
+      // Insert new role
+      const { error: insertError } = await supabase
+        .from('user_roles')
+        .insert({
+          user_id: selectedUserForRoleEdit.id,
+          role: newRoleForUser,
+          organization_id: organizationId,
+        });
+
+      if (insertError) throw insertError;
+
+      toast({
+        title: "Success",
+        description: "User role updated successfully",
+      });
+
+      setSelectedUserForRoleEdit(null);
+      await loadUsers();
+    } catch (error: any) {
+      console.error('Error updating role:', error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to update role",
+        variant: "destructive",
+      });
+    }
+  };
+
   return (
     <>
       <Dialog open={isUsersDialogOpen} onOpenChange={setIsUsersDialogOpen}>
@@ -486,11 +538,14 @@ export default function OrganizationUsers({ organizationId, organizationName }: 
 
                     <div className="space-y-2">
                       <Label htmlFor="role">Role *</Label>
-                      <Select value={formData.role} onValueChange={(value: any) => setFormData({ ...formData, role: value })}>
+                      <Select value={formData.role} onValueChange={(value: AppRole) => setFormData({ ...formData, role: value })}>
                         <SelectTrigger>
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
+                          {isSuperAdmin && (
+                            <SelectItem value="super_admin">Super Admin</SelectItem>
+                          )}
                           <SelectItem value="clinic_admin">Clinic Admin</SelectItem>
                           <SelectItem value="clinic_user">Clinic User</SelectItem>
                         </SelectContent>
@@ -571,14 +626,26 @@ export default function OrganizationUsers({ organizationId, organizationName }: 
                           {format(new Date(user.created_at), 'MMM dd, yyyy')}
                         </TableCell>
                         <TableCell>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={(e) => handleResetPasswordClick(user, e)}
-                          >
-                            <KeyRound className="w-3 h-3 mr-2" />
-                            Reset Password
-                          </Button>
+                          <div className="flex gap-2">
+                            {(isSuperAdmin || isClinicAdmin) && (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={(e) => handleEditRoleClick(user, e)}
+                              >
+                                <Edit className="w-3 h-3 mr-2" />
+                                Edit Role
+                              </Button>
+                            )}
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={(e) => handleResetPasswordClick(user, e)}
+                            >
+                              <KeyRound className="w-3 h-3 mr-2" />
+                              Reset Password
+                            </Button>
+                          </div>
                         </TableCell>
                       </TableRow>
                     ))
@@ -599,6 +666,47 @@ export default function OrganizationUsers({ organizationId, organizationName }: 
             onSuccess={loadUsers}
           />
         )}
+      </Dialog>
+
+      {/* Edit Role Dialog */}
+      <Dialog open={!!selectedUserForRoleEdit} onOpenChange={() => setSelectedUserForRoleEdit(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>
+              Edit Role - {selectedUserForRoleEdit?.first_name} {selectedUserForRoleEdit?.last_name}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="newRole">Select New Role</Label>
+              <Select value={newRoleForUser} onValueChange={(value: AppRole) => setNewRoleForUser(value)}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {isSuperAdmin && (
+                    <SelectItem value="super_admin">Super Admin</SelectItem>
+                  )}
+                  <SelectItem value="clinic_admin">Clinic Admin</SelectItem>
+                  <SelectItem value="clinic_user">Clinic User</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="flex justify-end gap-2">
+              <Button 
+                type="button" 
+                variant="outline" 
+                onClick={() => setSelectedUserForRoleEdit(null)}
+              >
+                Cancel
+              </Button>
+              <Button onClick={handleUpdateRole}>
+                Update Role
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
       </Dialog>
     </>
   );
