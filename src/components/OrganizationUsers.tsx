@@ -163,13 +163,20 @@ export default function OrganizationUsers({ organizationId, organizationName }: 
   const loadUsers = async () => {
     setLoading(true);
     try {
+      console.log('Loading users for organization:', organizationId);
+      
       // Fetch profiles
       const { data: profiles, error: profilesError } = await supabase
         .from('profiles')
         .select('*')
         .eq('organization_id', organizationId);
 
-      if (profilesError) throw profilesError;
+      if (profilesError) {
+        console.error('Profiles fetch error:', profilesError);
+        throw profilesError;
+      }
+
+      console.log('Profiles loaded:', profiles?.length);
 
       // Fetch user roles for these users
       const userIds = (profiles || []).map(p => p.id);
@@ -178,7 +185,12 @@ export default function OrganizationUsers({ organizationId, organizationName }: 
         .select('user_id, role')
         .in('user_id', userIds);
 
-      if (rolesError) throw rolesError;
+      if (rolesError) {
+        console.error('Roles fetch error:', rolesError);
+        throw rolesError;
+      }
+
+      console.log('Roles loaded:', roles?.length);
 
       // Combine data
       const usersWithRoles = (profiles || []).map(profile => ({
@@ -194,6 +206,7 @@ export default function OrganizationUsers({ organizationId, organizationName }: 
           .map(r => r.role),
       }));
 
+      console.log('Users with roles:', usersWithRoles);
       setUsers(usersWithRoles);
     } catch (error) {
       console.error('Error loading users:', error);
@@ -232,6 +245,11 @@ export default function OrganizationUsers({ organizationId, organizationName }: 
       if (authError) throw authError;
       if (!authData.user) throw new Error('User creation failed');
 
+      console.log('User created:', authData.user.id);
+
+      // Wait a moment for the trigger to complete
+      await new Promise(resolve => setTimeout(resolve, 500));
+
       // Update profile with organization
       const { error: profileError } = await supabase
         .from('profiles')
@@ -241,7 +259,12 @@ export default function OrganizationUsers({ organizationId, organizationName }: 
         })
         .eq('id', authData.user.id);
 
-      if (profileError) throw profileError;
+      if (profileError) {
+        console.error('Profile update error:', profileError);
+        throw profileError;
+      }
+
+      console.log('Profile updated with organization');
 
       // Assign role
       const { error: roleError } = await supabase
@@ -252,7 +275,12 @@ export default function OrganizationUsers({ organizationId, organizationName }: 
           organization_id: organizationId,
         }]);
 
-      if (roleError) throw roleError;
+      if (roleError) {
+        console.error('Role assignment error:', roleError);
+        throw roleError;
+      }
+
+      console.log('Role assigned');
 
       toast({
         title: "Success",
@@ -261,7 +289,10 @@ export default function OrganizationUsers({ organizationId, organizationName }: 
 
       setIsDialogOpen(false);
       resetForm();
-      loadUsers();
+      
+      // Wait a bit before reloading to ensure all changes are committed
+      await new Promise(resolve => setTimeout(resolve, 500));
+      await loadUsers();
     } catch (error: any) {
       console.error('Error creating user:', error);
       toast({
