@@ -230,72 +230,135 @@ export default function OrganizationUsers({ organizationId, organizationName }: 
     e.preventDefault();
 
     try {
-      // Create user in auth
-      const { data: authData, error: authError } = await supabase.auth.signUp({
-        email: formData.email,
-        password: formData.password,
-        options: {
-          data: {
-            first_name: formData.first_name,
-            last_name: formData.last_name,
-          },
-        },
-      });
-
-      // If user already exists, show specific error
-      if (authError?.message?.includes('already registered')) {
-        toast({
-          title: "User Already Exists",
-          description: "This email is already registered. Please contact a super admin to add this user to your organization.",
-          variant: "destructive",
-        });
-        return;
-      }
-
-      if (authError) throw authError;
-      if (!authData.user) throw new Error('User creation failed');
-
-      console.log('User created:', authData.user.id);
-
-      // Wait a moment for the trigger to complete
-      await new Promise(resolve => setTimeout(resolve, 500));
-
-      // Update profile with organization
-      const { error: profileError } = await supabase
+      // First check if user exists in profiles by email
+      const { data: existingProfile } = await supabase
         .from('profiles')
-        .update({
-          organization_id: organizationId,
-          phone: formData.phone || null,
-        })
-        .eq('id', authData.user.id);
+        .select('id, organization_id')
+        .eq('email', formData.email)
+        .maybeSingle();
 
-      if (profileError) {
-        console.error('Profile update error:', profileError);
-        throw profileError;
+      let userId: string;
+
+      if (existingProfile) {
+        // User exists in profiles
+        userId = existingProfile.id;
+        
+        // Update their organization
+        const { error: profileError } = await supabase
+          .from('profiles')
+          .update({
+            organization_id: organizationId,
+            phone: formData.phone || null,
+          })
+          .eq('id', userId);
+
+        if (profileError) {
+          console.error('Profile update error:', profileError);
+          throw profileError;
+        }
+
+        console.log('Profile updated with organization');
+
+        // Check if user already has a role for this organization
+        const { data: existingRoles } = await supabase
+          .from('user_roles')
+          .select('*')
+          .eq('user_id', userId)
+          .eq('organization_id', organizationId);
+
+        if (!existingRoles || existingRoles.length === 0) {
+          // Assign role
+          const { error: roleError } = await supabase
+            .from('user_roles')
+            .insert([{
+              user_id: userId,
+              role: formData.role,
+              organization_id: organizationId,
+            }]);
+
+          if (roleError) {
+            console.error('Role assignment error:', roleError);
+            throw roleError;
+          }
+
+          console.log('Role assigned');
+        } else {
+          console.log('User already has role for this organization');
+        }
+
+        toast({
+          title: "Success",
+          description: "User added to organization successfully",
+        });
+      } else {
+        // User doesn't exist, create new one
+        const { data: authData, error: authError } = await supabase.auth.signUp({
+          email: formData.email,
+          password: formData.password,
+          options: {
+            data: {
+              first_name: formData.first_name,
+              last_name: formData.last_name,
+            },
+          },
+        });
+
+        // If user already exists in auth but not in profiles (shouldn't happen normally)
+        if (authError?.message?.includes('already registered')) {
+          toast({
+            title: "Error",
+            description: "User email exists but profile not found. Please contact support.",
+            variant: "destructive",
+          });
+          return;
+        }
+
+        if (authError) throw authError;
+        if (!authData.user) throw new Error('User creation failed');
+
+        console.log('User created:', authData.user.id);
+        userId = authData.user.id;
+
+        // Wait a moment for the trigger to complete
+        await new Promise(resolve => setTimeout(resolve, 1000));
+
+        // Update profile with organization
+        const { error: profileError } = await supabase
+          .from('profiles')
+          .update({
+            organization_id: organizationId,
+            phone: formData.phone || null,
+          })
+          .eq('id', userId);
+
+        if (profileError) {
+          console.error('Profile update error:', profileError);
+          throw profileError;
+        }
+
+        console.log('Profile updated with organization');
+
+        // Assign role
+        const { error: roleError } = await supabase
+          .from('user_roles')
+          .insert([{
+            user_id: userId,
+            role: formData.role,
+            organization_id: organizationId,
+          }]);
+
+        if (roleError) {
+          console.error('Role assignment error:', roleError);
+          throw roleError;
+        }
+
+        console.log('Role assigned');
+
+        toast({
+          title: "Success",
+          description: "User created successfully",
+        });
       }
-
-      console.log('Profile updated with organization');
-
-      // Assign role
-      const { error: roleError } = await supabase
-        .from('user_roles')
-        .insert([{
-          user_id: authData.user.id,
-          role: formData.role,
-          organization_id: organizationId,
-        }]);
-
-      if (roleError) {
-        console.error('Role assignment error:', roleError);
-        throw roleError;
-      }
-
-      console.log('Role assigned');
-
-      toast({
-        title: "Success",
-        description: "User created successfully",
-      });
 
       setIsDialogOpen(false);
       resetForm();
