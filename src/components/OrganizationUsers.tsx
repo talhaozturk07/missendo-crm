@@ -235,141 +235,46 @@ export default function OrganizationUsers({ organizationId, organizationName }: 
     e.preventDefault();
 
     try {
-      // First check if user exists in profiles by email
-      const { data: existingProfile } = await supabase
-        .from('profiles')
-        .select('id, organization_id')
-        .eq('email', formData.email)
-        .maybeSingle();
-
-      let userId: string;
-
-      if (existingProfile) {
-        // User exists in profiles
-        userId = existingProfile.id;
-        
-        // Update their organization
-        const { error: profileError } = await supabase
-          .from('profiles')
-          .update({
-            organization_id: organizationId,
-            phone: formData.phone || null,
-          })
-          .eq('id', userId);
-
-        if (profileError) {
-          console.error('Profile update error:', profileError);
-          throw profileError;
-        }
-
-        console.log('Profile updated with organization');
-
-        // Check if user already has a role for this organization
-        const { data: existingRoles } = await supabase
-          .from('user_roles')
-          .select('*')
-          .eq('user_id', userId)
-          .eq('organization_id', organizationId);
-
-        if (!existingRoles || existingRoles.length === 0) {
-          // Assign role
-          const { error: roleError } = await supabase
-            .from('user_roles')
-            .insert([{
-              user_id: userId,
-              role: formData.role,
-              organization_id: organizationId,
-            }]);
-
-          if (roleError) {
-            console.error('Role assignment error:', roleError);
-            throw roleError;
-          }
-
-          console.log('Role assigned');
-        } else {
-          console.log('User already has role for this organization');
-        }
-
-        toast({
-          title: "Success",
-          description: "User added to organization successfully",
-        });
-      } else {
-        // User doesn't exist, create new one
-        const { data: authData, error: authError } = await supabase.auth.signUp({
-          email: formData.email,
-          password: formData.password,
-          options: {
-            data: {
-              first_name: formData.first_name,
-              last_name: formData.last_name,
-            },
-          },
-        });
-
-        // If user already exists in auth but not in profiles (shouldn't happen normally)
-        if (authError?.message?.includes('already registered')) {
-          toast({
-            title: "Error",
-            description: "User email exists but profile not found. Please contact support.",
-            variant: "destructive",
-          });
-          return;
-        }
-
-        if (authError) throw authError;
-        if (!authData.user) throw new Error('User creation failed');
-
-        console.log('User created:', authData.user.id);
-        userId = authData.user.id;
-
-        // Wait a moment for the trigger to complete
-        await new Promise(resolve => setTimeout(resolve, 1000));
-
-        // Update profile with organization
-        const { error: profileError } = await supabase
-          .from('profiles')
-          .update({
-            organization_id: organizationId,
-            phone: formData.phone || null,
-          })
-          .eq('id', userId);
-
-        if (profileError) {
-          console.error('Profile update error:', profileError);
-          throw profileError;
-        }
-
-        console.log('Profile updated with organization');
-
-        // Assign role
-        const { error: roleError } = await supabase
-          .from('user_roles')
-          .insert([{
-            user_id: userId,
-            role: formData.role,
-            organization_id: organizationId,
-          }]);
-
-        if (roleError) {
-          console.error('Role assignment error:', roleError);
-          throw roleError;
-        }
-
-        console.log('Role assigned');
-
-        toast({
-          title: "Success",
-          description: "User created successfully",
-        });
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!session) {
+        throw new Error('Not authenticated');
       }
+
+      // Call edge function to create user
+      const response = await fetch(
+        `https://xzcpxatfzgusrxfreeoi.supabase.co/functions/v1/create-user`,
+        {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${session.access_token}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            email: formData.email,
+            password: formData.password,
+            firstName: formData.first_name,
+            lastName: formData.last_name,
+            phone: formData.phone,
+            role: formData.role,
+            organizationId: organizationId,
+          }),
+        }
+      );
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error || 'Failed to create user');
+      }
+
+      toast({
+        title: "Success",
+        description: result.message || "User created successfully",
+      });
 
       setIsDialogOpen(false);
       resetForm();
-      
-      // Wait a bit before reloading to ensure all changes are committed
-      await new Promise(resolve => setTimeout(resolve, 500));
       await loadUsers();
     } catch (error: any) {
       console.error('Error creating user:', error);
