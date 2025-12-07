@@ -12,6 +12,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { Calendar, FileText, Plus, Upload, Download, Trash2, Eye, MessageSquare, CreditCard, Plane, DollarSign, User, Phone, Mail, MapPin, ExternalLink } from 'lucide-react';
+import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
 
@@ -89,6 +90,7 @@ export function PatientDetails({ patientId, onClose }: PatientDetailsProps) {
     medical_condition?: string;
     allergies?: string;
     notes?: string;
+    photo_url?: string;
     has_companion?: boolean;
     companion_first_name?: string;
     companion_last_name?: string;
@@ -144,7 +146,7 @@ export function PatientDetails({ patientId, onClose }: PatientDetailsProps) {
         supabase.from('patient_notes').select('*').eq('patient_id', patientId).order('note_date', { ascending: false }),
         supabase.from('patient_payments').select('*').eq('patient_id', patientId).order('payment_date', { ascending: false }),
         supabase.from('patient_transfers').select('*').eq('patient_id', patientId).order('transfer_datetime', { ascending: false }),
-        supabase.from('patients').select('total_cost, total_paid, first_name, last_name, email, phone, date_of_birth, gender, country, address, medical_condition, allergies, notes, has_companion, companion_first_name, companion_last_name, companion_phone').eq('id', patientId).maybeSingle(),
+        supabase.from('patients').select('total_cost, total_paid, first_name, last_name, email, phone, date_of_birth, gender, country, address, medical_condition, allergies, notes, photo_url, has_companion, companion_first_name, companion_last_name, companion_phone').eq('id', patientId).maybeSingle(),
         supabase.from('hotels').select('*').eq('organization_id', profile?.organization_id),
         supabase.from('transfer_services').select('*').eq('organization_id', profile?.organization_id),
         supabase.from('treatments').select('*').eq('organization_id', profile?.organization_id)
@@ -578,9 +580,12 @@ export function PatientDetails({ patientId, onClose }: PatientDetailsProps) {
               {/* Left: Basic Info */}
               <div className="flex-1">
                 <div className="flex items-center gap-3 mb-3">
-                  <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center">
-                    <User className="w-5 h-5 text-primary" />
-                  </div>
+                  <Avatar className="w-12 h-12">
+                    <AvatarImage src={patientInfo.photo_url || ''} alt={`${patientInfo.first_name} ${patientInfo.last_name}`} />
+                    <AvatarFallback className="bg-primary/10">
+                      <User className="w-6 h-6 text-primary" />
+                    </AvatarFallback>
+                  </Avatar>
                   <div>
                     <h3 className="font-semibold text-lg">{patientInfo.first_name} {patientInfo.last_name}</h3>
                     <div className="flex items-center gap-2">
