@@ -1238,11 +1238,20 @@ export function PatientDetails({ patientId, onClose }: PatientDetailsProps) {
           </DialogHeader>
           <div className="flex-1 overflow-hidden h-full">
             {viewingDocument?.type.includes('pdf') ? (
-              <iframe
-                src={viewingDocument.url}
-                className="w-full h-[calc(85vh-120px)] border-0 rounded"
-                title={viewingDocument.name}
-              />
+              <object
+                data={`${viewingDocument.url}#toolbar=1&navpanes=1&scrollbar=1`}
+                type="application/pdf"
+                className="w-full h-[calc(85vh-120px)] border-0 rounded bg-muted"
+              >
+                <div className="flex flex-col items-center justify-center h-full gap-4">
+                  <FileText className="w-16 h-16 text-muted-foreground" />
+                  <p className="text-muted-foreground">PDF önizleme desteklenmiyor.</p>
+                  <Button onClick={() => viewingDocument && window.open(viewingDocument.url, '_blank')}>
+                    <ExternalLink className="w-4 h-4 mr-2" />
+                    Yeni Sekmede Aç
+                  </Button>
+                </div>
+              </object>
             ) : viewingDocument?.type.includes('image') ? (
               <div className="flex items-center justify-center h-[calc(85vh-120px)] overflow-auto">
                 <img
