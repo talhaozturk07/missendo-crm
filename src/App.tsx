@@ -17,7 +17,6 @@ import Treatments from "./pages/Treatments";
 import Transfers from "./pages/Transfers";
 import Hotels from "./pages/Hotels";
 import Accounting from "./pages/Accounting";
-import PartnerClinics from "./pages/PartnerClinics";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -166,14 +165,6 @@ const App = () => (
               element={
                 <ProtectedRoute>
                   <Accounting />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/partner-clinics"
-              element={
-                <ProtectedRoute>
-                  <PartnerClinics />
                 </ProtectedRoute>
               }
             />

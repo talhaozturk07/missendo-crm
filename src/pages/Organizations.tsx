@@ -20,6 +20,13 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import { Plus, Search, Building2, CheckCircle, XCircle, Settings } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
@@ -35,6 +42,7 @@ interface Organization {
   address: string | null;
   city: string | null;
   country: string | null;
+  category: string | null;
   is_active: boolean;
   created_at: string;
   wa_access_token: string | null;
@@ -42,6 +50,18 @@ interface Organization {
   fb_ad_account_id: string | null;
   fb_page_access_token: string | null;
 }
+
+const categoryLabels: Record<string, string> = {
+  hair: 'Saç',
+  dental: 'Diş',
+  aesthetic: 'Estetik',
+};
+
+const categoryColors: Record<string, string> = {
+  hair: 'bg-amber-500/10 text-amber-600 border-amber-500/20',
+  dental: 'bg-blue-500/10 text-blue-600 border-blue-500/20',
+  aesthetic: 'bg-pink-500/10 text-pink-600 border-pink-500/20',
+};
 
 export default function Organizations() {
   const { isSuperAdmin, loading: authLoading } = useAuth();
@@ -60,6 +80,7 @@ export default function Organizations() {
     address: '',
     city: '',
     country: 'Turkey',
+    category: 'dental',
     is_active: true,
   });
 
@@ -147,6 +168,7 @@ export default function Organizations() {
       address: '',
       city: '',
       country: 'Turkey',
+      category: 'dental',
       is_active: true,
     });
     setSelectedOrg(null);
@@ -161,6 +183,7 @@ export default function Organizations() {
       address: org.address || '',
       city: org.city || '',
       country: org.country || 'Turkey',
+      category: org.category || 'dental',
       is_active: org.is_active,
     });
     setIsDialogOpen(true);
@@ -314,6 +337,23 @@ export default function Organizations() {
                   </div>
                 </div>
 
+                <div className="space-y-2">
+                  <Label htmlFor="category">Kategori *</Label>
+                  <Select
+                    value={formData.category}
+                    onValueChange={(value) => setFormData({ ...formData, category: value })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Kategori seçin" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="hair">Saç</SelectItem>
+                      <SelectItem value="dental">Diş</SelectItem>
+                      <SelectItem value="aesthetic">Estetik</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
                 <div className="flex items-center space-x-2">
                   <input
                     type="checkbox"
@@ -353,6 +393,7 @@ export default function Organizations() {
             <TableHeader>
               <TableRow>
                 <TableHead>Organization</TableHead>
+                <TableHead>Kategori</TableHead>
                 <TableHead>Contact</TableHead>
                 <TableHead>Location</TableHead>
                 <TableHead>Status</TableHead>
@@ -363,13 +404,13 @@ export default function Organizations() {
             <TableBody>
               {loading ? (
                 <TableRow>
-                  <TableCell colSpan={6} className="text-center py-8">
+                  <TableCell colSpan={7} className="text-center py-8">
                     Loading organizations...
                   </TableCell>
                 </TableRow>
               ) : filteredOrganizations.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
+                  <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
                     No organizations found
                   </TableCell>
                 </TableRow>
@@ -381,6 +422,16 @@ export default function Organizations() {
                         <Building2 className="w-4 h-4 text-primary" />
                         <span className="font-medium">{org.name}</span>
                       </div>
+                    </TableCell>
+                    <TableCell>
+                      {org.category && (
+                        <Badge 
+                          variant="outline" 
+                          className={categoryColors[org.category] || ''}
+                        >
+                          {categoryLabels[org.category] || org.category}
+                        </Badge>
+                      )}
                     </TableCell>
                     <TableCell>
                       <div className="space-y-1 text-sm">
