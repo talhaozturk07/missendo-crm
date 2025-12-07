@@ -11,10 +11,16 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
-import { Calendar, FileText, Plus, Upload, Download, Trash2, Eye, MessageSquare, CreditCard, Plane, DollarSign, User, Phone, Mail, MapPin, ExternalLink } from 'lucide-react';
+import { Calendar, FileText, Plus, Upload, Download, Trash2, Eye, MessageSquare, CreditCard, Plane, DollarSign, User, Phone, Mail, MapPin, ExternalLink, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
+import { Document, Page, pdfjs } from 'react-pdf';
+import 'react-pdf/dist/esm/Page/AnnotationLayer.css';
+import 'react-pdf/dist/esm/Page/TextLayer.css';
+
+// PDF.js worker
+pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
 
 interface PatientDetailsProps {
   patientId: string;
@@ -101,6 +107,8 @@ export function PatientDetails({ patientId, onClose }: PatientDetailsProps) {
   const [treatments, setTreatments] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [viewingDocument, setViewingDocument] = useState<{ url: string; name: string; type: string } | null>(null);
+  const [numPages, setNumPages] = useState<number>(0);
+  const [pageNumber, setPageNumber] = useState<number>(1);
 
   const [appointmentForm, setAppointmentForm] = useState({
     appointment_date: '',
@@ -1227,6 +1235,8 @@ export function PatientDetails({ patientId, onClose }: PatientDetailsProps) {
           URL.revokeObjectURL(viewingDocument.url);
         }
         setViewingDocument(null);
+        setPageNumber(1);
+        setNumPages(0);
       }}>
         <DialogContent className="max-w-5xl h-[85vh]">
           <DialogHeader>
@@ -1236,22 +1246,55 @@ export function PatientDetails({ patientId, onClose }: PatientDetailsProps) {
             </DialogTitle>
             <DialogDescription>Belge önizleme</DialogDescription>
           </DialogHeader>
-          <div className="flex-1 overflow-hidden h-full">
+          <div className="flex-1 overflow-auto h-full">
             {viewingDocument?.type.includes('pdf') ? (
-              <object
-                data={`${viewingDocument.url}#toolbar=1&navpanes=1&scrollbar=1`}
-                type="application/pdf"
-                className="w-full h-[calc(85vh-120px)] border-0 rounded bg-muted"
-              >
-                <div className="flex flex-col items-center justify-center h-full gap-4">
-                  <FileText className="w-16 h-16 text-muted-foreground" />
-                  <p className="text-muted-foreground">PDF önizleme desteklenmiyor.</p>
-                  <Button onClick={() => viewingDocument && window.open(viewingDocument.url, '_blank')}>
-                    <ExternalLink className="w-4 h-4 mr-2" />
-                    Yeni Sekmede Aç
-                  </Button>
-                </div>
-              </object>
+              <div className="flex flex-col items-center">
+                <Document
+                  file={viewingDocument.url}
+                  onLoadSuccess={({ numPages }) => setNumPages(numPages)}
+                  loading={
+                    <div className="flex items-center justify-center h-[calc(85vh-180px)]">
+                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                    </div>
+                  }
+                  error={
+                    <div className="flex flex-col items-center justify-center h-[calc(85vh-180px)] gap-4">
+                      <FileText className="w-16 h-16 text-muted-foreground" />
+                      <p className="text-muted-foreground">PDF yüklenemedi.</p>
+                    </div>
+                  }
+                >
+                  <Page 
+                    pageNumber={pageNumber} 
+                    width={Math.min(800, window.innerWidth - 100)}
+                    renderTextLayer={true}
+                    renderAnnotationLayer={true}
+                  />
+                </Document>
+                {numPages > 0 && (
+                  <div className="flex items-center gap-4 mt-4 pb-4">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setPageNumber(prev => Math.max(1, prev - 1))}
+                      disabled={pageNumber <= 1}
+                    >
+                      <ChevronLeft className="w-4 h-4" />
+                    </Button>
+                    <span className="text-sm text-muted-foreground">
+                      Sayfa {pageNumber} / {numPages}
+                    </span>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setPageNumber(prev => Math.min(numPages, prev + 1))}
+                      disabled={pageNumber >= numPages}
+                    >
+                      <ChevronRight className="w-4 h-4" />
+                    </Button>
+                  </div>
+                )}
+              </div>
             ) : viewingDocument?.type.includes('image') ? (
               <div className="flex items-center justify-center h-[calc(85vh-120px)] overflow-auto">
                 <img
