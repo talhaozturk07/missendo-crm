@@ -4,21 +4,8 @@ import { supabase } from '@/integrations/supabase/client';
 import Layout from '@/components/Layout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from '@/components/ui/dialog';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -29,7 +16,6 @@ import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { PatientDetails } from '@/components/PatientDetails';
-
 interface Patient {
   id: string;
   first_name: string;
@@ -43,16 +29,19 @@ interface Patient {
   photo_url: string | null;
   created_at: string;
   organization_id: string;
-  organizations?: { name: string } | null;
+  organizations?: {
+    name: string;
+  } | null;
 }
-
 interface Organization {
   id: string;
   name: string;
 }
-
 export default function Patients() {
-  const { profile, isSuperAdmin } = useAuth();
+  const {
+    profile,
+    isSuperAdmin
+  } = useAuth();
   const [patients, setPatients] = useState<Patient[]>([]);
   const [organizations, setOrganizations] = useState<Organization[]>([]);
   const [loading, setLoading] = useState(true);
@@ -60,8 +49,9 @@ export default function Patients() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [selectedPatient, setSelectedPatient] = useState<Patient | null>(null);
   const [showPatientDetails, setShowPatientDetails] = useState(false);
-  const { toast } = useToast();
-
+  const {
+    toast
+  } = useToast();
   const [formData, setFormData] = useState({
     first_name: '',
     last_name: '',
@@ -80,48 +70,41 @@ export default function Patients() {
     companion_last_name: '',
     companion_phone: '',
     companion_id_number: '',
-    organization_id: '',
+    organization_id: ''
   });
   const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [photoPreview, setPhotoPreview] = useState<string>('');
-
   useEffect(() => {
     loadPatients();
     if (isSuperAdmin) {
       loadOrganizations();
     }
   }, [profile, isSuperAdmin]);
-
   const loadOrganizations = async () => {
     try {
-      const { data, error } = await supabase
-        .from('organizations')
-        .select('id, name')
-        .eq('is_active', true)
-        .order('name');
-      
+      const {
+        data,
+        error
+      } = await supabase.from('organizations').select('id, name').eq('is_active', true).order('name');
       if (error) throw error;
       setOrganizations(data || []);
     } catch (error) {
       console.error('Error loading organizations:', error);
     }
   };
-
   const loadPatients = async () => {
     if (!profile) return;
-
     try {
-      let query = supabase
-        .from('patients')
-        .select('*, organizations(name)')
-        .order('created_at', { ascending: false });
-
+      let query = supabase.from('patients').select('*, organizations(name)').order('created_at', {
+        ascending: false
+      });
       if (!isSuperAdmin && profile.organization_id) {
         query = query.eq('organization_id', profile.organization_id);
       }
-
-      const { data, error } = await query;
-
+      const {
+        data,
+        error
+      } = await query;
       if (error) throw error;
       setPatients(data || []);
     } catch (error) {
@@ -129,13 +112,12 @@ export default function Patients() {
       toast({
         title: "Error",
         description: "Failed to load patients",
-        variant: "destructive",
+        variant: "destructive"
       });
     } finally {
       setLoading(false);
     }
   };
-
   const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
@@ -147,25 +129,24 @@ export default function Patients() {
       reader.readAsDataURL(file);
     }
   };
-
   const handleRemovePhoto = () => {
     setPhotoFile(null);
     setPhotoPreview('');
-    setFormData({ ...formData, photo_url: '' });
+    setFormData({
+      ...formData,
+      photo_url: ''
+    });
   };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
     if (!profile?.organization_id) {
       toast({
         title: "Error",
         description: "You must be assigned to an organization",
-        variant: "destructive",
+        variant: "destructive"
       });
       return;
     }
-
     try {
       let photoUrl = formData.photo_url;
 
@@ -174,26 +155,23 @@ export default function Patients() {
         const patientId = selectedPatient?.id || crypto.randomUUID();
         const fileExt = photoFile.name.split('.').pop();
         const fileName = `${patientId}/${Date.now()}.${fileExt}`;
-
-        const { error: uploadError } = await supabase.storage
-          .from('patient-photos')
-          .upload(fileName, photoFile, { upsert: true });
-
+        const {
+          error: uploadError
+        } = await supabase.storage.from('patient-photos').upload(fileName, photoFile, {
+          upsert: true
+        });
         if (uploadError) throw uploadError;
-
-        const { data: { publicUrl } } = supabase.storage
-          .from('patient-photos')
-          .getPublicUrl(fileName);
-
+        const {
+          data: {
+            publicUrl
+          }
+        } = supabase.storage.from('patient-photos').getPublicUrl(fileName);
         photoUrl = publicUrl;
       }
-
       const patientData = {
         ...formData,
         photo_url: photoUrl || null,
-        organization_id: isSuperAdmin && formData.organization_id 
-          ? formData.organization_id 
-          : profile.organization_id,
+        organization_id: isSuperAdmin && formData.organization_id ? formData.organization_id : profile.organization_id,
         created_by: profile.id,
         email: formData.email || null,
         date_of_birth: formData.date_of_birth || null,
@@ -206,32 +184,27 @@ export default function Patients() {
         companion_first_name: formData.has_companion ? formData.companion_first_name : null,
         companion_last_name: formData.has_companion ? formData.companion_last_name : null,
         companion_phone: formData.has_companion ? formData.companion_phone : null,
-        companion_id_number: formData.has_companion ? formData.companion_id_number : null,
+        companion_id_number: formData.has_companion ? formData.companion_id_number : null
       };
-
       if (selectedPatient) {
-        const { error } = await supabase
-          .from('patients')
-          .update(patientData)
-          .eq('id', selectedPatient.id);
-
+        const {
+          error
+        } = await supabase.from('patients').update(patientData).eq('id', selectedPatient.id);
         if (error) throw error;
-
         toast({
           title: "Success",
-          description: "Patient updated successfully",
+          description: "Patient updated successfully"
         });
       } else {
-        const { error } = await supabase.from('patients').insert([patientData]);
-
+        const {
+          error
+        } = await supabase.from('patients').insert([patientData]);
         if (error) throw error;
-
         toast({
           title: "Success",
-          description: "Patient created successfully",
+          description: "Patient created successfully"
         });
       }
-
       setIsDialogOpen(false);
       resetForm();
       loadPatients();
@@ -240,11 +213,10 @@ export default function Patients() {
       toast({
         title: "Error",
         description: "Failed to save patient",
-        variant: "destructive",
+        variant: "destructive"
       });
     }
   };
-
   const resetForm = () => {
     setFormData({
       first_name: '',
@@ -264,23 +236,19 @@ export default function Patients() {
       companion_last_name: '',
       companion_phone: '',
       companion_id_number: '',
-      organization_id: profile?.organization_id || '',
+      organization_id: profile?.organization_id || ''
     });
     setPhotoFile(null);
     setPhotoPreview('');
     setSelectedPatient(null);
   };
-
   const handleEdit = async (patient: Patient) => {
     setSelectedPatient(patient);
-    
-    // Fetch full patient details
-    const { data } = await supabase
-      .from('patients')
-      .select('*')
-      .eq('id', patient.id)
-      .single();
 
+    // Fetch full patient details
+    const {
+      data
+    } = await supabase.from('patients').select('*').eq('id', patient.id).single();
     if (data) {
       setFormData({
         first_name: data.first_name,
@@ -300,22 +268,14 @@ export default function Patients() {
         companion_last_name: data.companion_last_name || '',
         companion_phone: data.companion_phone || '',
         companion_id_number: data.companion_id_number || '',
-        organization_id: data.organization_id || '',
+        organization_id: data.organization_id || ''
       });
       setPhotoPreview(data.photo_url || '');
     }
-    
     setIsDialogOpen(true);
   };
-
-  const filteredPatients = patients.filter(patient =>
-    `${patient.first_name} ${patient.last_name} ${patient.email} ${patient.phone}`
-      .toLowerCase()
-      .includes(searchQuery.toLowerCase())
-  );
-
-  return (
-    <Layout>
+  const filteredPatients = patients.filter(patient => `${patient.first_name} ${patient.last_name} ${patient.email} ${patient.phone}`.toLowerCase().includes(searchQuery.toLowerCase()));
+  return <Layout>
       <div className="space-y-6">
         <div className="flex justify-between items-center">
           <div>
@@ -342,217 +302,168 @@ export default function Patients() {
                         <User className="w-12 h-12" />
                       </AvatarFallback>
                     </Avatar>
-                    {(photoPreview || formData.photo_url) && (
-                      <Button
-                        type="button"
-                        variant="destructive"
-                        size="icon"
-                        className="absolute -top-2 -right-2 h-6 w-6 rounded-full"
-                        onClick={handleRemovePhoto}
-                      >
+                    {(photoPreview || formData.photo_url) && <Button type="button" variant="destructive" size="icon" className="absolute -top-2 -right-2 h-6 w-6 rounded-full" onClick={handleRemovePhoto}>
                         <X className="h-3 w-3" />
-                      </Button>
-                    )}
-                    <Label
-                      htmlFor="photo"
-                      className="absolute bottom-0 right-0 cursor-pointer bg-primary text-primary-foreground rounded-full p-2 hover:bg-primary/90"
-                    >
+                      </Button>}
+                    <Label htmlFor="photo" className="absolute bottom-0 right-0 cursor-pointer bg-primary text-primary-foreground rounded-full p-2 hover:bg-primary/90">
                       <Upload className="h-4 w-4" />
-                      <Input
-                        id="photo"
-                        type="file"
-                        accept="image/*"
-                        onChange={handlePhotoChange}
-                        className="hidden"
-                      />
+                      <Input id="photo" type="file" accept="image/*" onChange={handlePhotoChange} className="hidden" />
                     </Label>
                   </div>
                 </div>
 
                 {/* Clinic selection for super admins */}
-                {isSuperAdmin && (
-                  <div className="space-y-2">
+                {isSuperAdmin && <div className="space-y-2">
                     <Label htmlFor="organization_id">Clinic *</Label>
-                    <Select 
-                      value={formData.organization_id} 
-                      onValueChange={(value) => setFormData({ ...formData, organization_id: value })}
-                    >
+                    <Select value={formData.organization_id} onValueChange={value => setFormData({
+                  ...formData,
+                  organization_id: value
+                })}>
                       <SelectTrigger>
                         <SelectValue placeholder="Select clinic" />
                       </SelectTrigger>
                       <SelectContent>
-                        {organizations.map(org => (
-                          <SelectItem key={org.id} value={org.id}>{org.name}</SelectItem>
-                        ))}
+                        {organizations.map(org => <SelectItem key={org.id} value={org.id}>{org.name}</SelectItem>)}
                       </SelectContent>
                     </Select>
-                  </div>
-                )}
+                  </div>}
 
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="first_name">First Name *</Label>
-                    <Input
-                      id="first_name"
-                      value={formData.first_name}
-                      onChange={(e) => setFormData({ ...formData, first_name: e.target.value })}
-                      required
-                    />
+                    <Input id="first_name" value={formData.first_name} onChange={e => setFormData({
+                    ...formData,
+                    first_name: e.target.value
+                  })} required />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="last_name">Last Name *</Label>
-                    <Input
-                      id="last_name"
-                      value={formData.last_name}
-                      onChange={(e) => setFormData({ ...formData, last_name: e.target.value })}
-                      required
-                    />
+                    <Input id="last_name" value={formData.last_name} onChange={e => setFormData({
+                    ...formData,
+                    last_name: e.target.value
+                  })} required />
                   </div>
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="email">Email</Label>
-                    <Input
-                      id="email"
-                      type="email"
-                      value={formData.email}
-                      onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                    />
+                    <Input id="email" type="email" value={formData.email} onChange={e => setFormData({
+                    ...formData,
+                    email: e.target.value
+                  })} />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="phone">Phone *</Label>
-                    <Input
-                      id="phone"
-                      value={formData.phone}
-                      onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                      required
-                    />
+                    <Input id="phone" value={formData.phone} onChange={e => setFormData({
+                    ...formData,
+                    phone: e.target.value
+                  })} required />
                   </div>
                 </div>
 
                 <div className="grid grid-cols-3 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="date_of_birth">Date of Birth</Label>
-                    <Input
-                      id="date_of_birth"
-                      type="date"
-                      value={formData.date_of_birth}
-                      onChange={(e) => setFormData({ ...formData, date_of_birth: e.target.value })}
-                    />
+                    <Input id="date_of_birth" type="date" value={formData.date_of_birth} onChange={e => setFormData({
+                    ...formData,
+                    date_of_birth: e.target.value
+                  })} />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="gender">Gender</Label>
-                    <Input
-                      id="gender"
-                      value={formData.gender}
-                      onChange={(e) => setFormData({ ...formData, gender: e.target.value })}
-                      placeholder="Male/Female/Other"
-                    />
+                    <Input id="gender" value={formData.gender} onChange={e => setFormData({
+                    ...formData,
+                    gender: e.target.value
+                  })} placeholder="Male/Female/Other" />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="country">Country</Label>
-                    <Input
-                      id="country"
-                      value={formData.country}
-                      onChange={(e) => setFormData({ ...formData, country: e.target.value })}
-                    />
+                    <Input id="country" value={formData.country} onChange={e => setFormData({
+                    ...formData,
+                    country: e.target.value
+                  })} />
                   </div>
                 </div>
 
                 <div className="space-y-2">
                   <Label htmlFor="address">Address</Label>
-                  <Input
-                    id="address"
-                    value={formData.address}
-                    onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-                  />
+                  <Input id="address" value={formData.address} onChange={e => setFormData({
+                  ...formData,
+                  address: e.target.value
+                })} />
                 </div>
 
                 <div className="space-y-2">
                   <Label htmlFor="medical_condition">Medical Condition</Label>
-                  <Textarea
-                    id="medical_condition"
-                    value={formData.medical_condition}
-                    onChange={(e) => setFormData({ ...formData, medical_condition: e.target.value })}
-                    rows={2}
-                    placeholder="Describe the patient's condition..."
-                  />
+                  <Textarea id="medical_condition" value={formData.medical_condition} onChange={e => setFormData({
+                  ...formData,
+                  medical_condition: e.target.value
+                })} rows={2} placeholder="Describe the patient's condition..." />
                 </div>
 
                 <div className="space-y-2">
                   <Label htmlFor="allergies">Allergies</Label>
-                  <Input
-                    id="allergies"
-                    value={formData.allergies}
-                    onChange={(e) => setFormData({ ...formData, allergies: e.target.value })}
-                    placeholder="e.g., Penicillin, Latex"
-                  />
+                  <Input id="allergies" value={formData.allergies} onChange={e => setFormData({
+                  ...formData,
+                  allergies: e.target.value
+                })} placeholder="e.g., Penicillin, Latex" />
                 </div>
 
                 <div className="space-y-2">
                   <Label htmlFor="notes">Notes</Label>
-                  <Textarea
-                    id="notes"
-                    value={formData.notes}
-                    onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-                    rows={2}
-                  />
+                  <Textarea id="notes" value={formData.notes} onChange={e => setFormData({
+                  ...formData,
+                  notes: e.target.value
+                })} rows={2} />
                 </div>
 
                 <div className="border-t pt-4 space-y-4">
                   <div className="flex items-center space-x-2">
-                    <Checkbox
-                      id="has_companion"
-                      checked={formData.has_companion}
-                      onCheckedChange={(checked) => setFormData({ ...formData, has_companion: checked as boolean })}
-                    />
+                    <Checkbox id="has_companion" checked={formData.has_companion} onCheckedChange={checked => setFormData({
+                    ...formData,
+                    has_companion: checked as boolean
+                  })} />
                     <Label htmlFor="has_companion" className="font-medium cursor-pointer">
                       Patient has a companion
                     </Label>
                   </div>
 
-                  {formData.has_companion && (
-                    <div className="pl-6 space-y-4 border-l-2 border-primary/20">
+                  {formData.has_companion && <div className="pl-6 space-y-4 border-l-2 border-primary/20">
                       <h4 className="font-medium text-sm">Companion Information</h4>
                       <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
                           <Label htmlFor="companion_first_name">First Name</Label>
-                          <Input
-                            id="companion_first_name"
-                            value={formData.companion_first_name}
-                            onChange={(e) => setFormData({ ...formData, companion_first_name: e.target.value })}
-                          />
+                          <Input id="companion_first_name" value={formData.companion_first_name} onChange={e => setFormData({
+                        ...formData,
+                        companion_first_name: e.target.value
+                      })} />
                         </div>
                         <div className="space-y-2">
                           <Label htmlFor="companion_last_name">Last Name</Label>
-                          <Input
-                            id="companion_last_name"
-                            value={formData.companion_last_name}
-                            onChange={(e) => setFormData({ ...formData, companion_last_name: e.target.value })}
-                          />
+                          <Input id="companion_last_name" value={formData.companion_last_name} onChange={e => setFormData({
+                        ...formData,
+                        companion_last_name: e.target.value
+                      })} />
                         </div>
                       </div>
                       <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
                           <Label htmlFor="companion_phone">Phone</Label>
-                          <Input
-                            id="companion_phone"
-                            value={formData.companion_phone}
-                            onChange={(e) => setFormData({ ...formData, companion_phone: e.target.value })}
-                          />
+                          <Input id="companion_phone" value={formData.companion_phone} onChange={e => setFormData({
+                        ...formData,
+                        companion_phone: e.target.value
+                      })} />
                         </div>
                         <div className="space-y-2">
                           <Label htmlFor="companion_id_number">ID Number</Label>
-                          <Input
-                            id="companion_id_number"
-                            value={formData.companion_id_number}
-                            onChange={(e) => setFormData({ ...formData, companion_id_number: e.target.value })}
-                          />
+                          <Input id="companion_id_number" value={formData.companion_id_number} onChange={e => setFormData({
+                        ...formData,
+                        companion_id_number: e.target.value
+                      })} />
                         </div>
                       </div>
-                    </div>
-                  )}
+                    </div>}
                 </div>
 
                 <div className="flex justify-end gap-2">
@@ -570,12 +481,7 @@ export default function Patients() {
 
         <div className="relative">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
-          <Input
-            placeholder="Search patients by name, email, or phone..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-10"
-          />
+          <Input placeholder="Search patients by name, email, or phone..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)} className="pl-10" />
         </div>
 
         <div className="bg-card rounded-lg border">
@@ -584,7 +490,7 @@ export default function Patients() {
               <TableRow>
                 <TableHead>Patient</TableHead>
                 <TableHead>Contact</TableHead>
-                {isSuperAdmin && <TableHead>Klinik</TableHead>}
+                {isSuperAdmin && <TableHead>Clinic</TableHead>}
                 <TableHead>Birth Date</TableHead>
                 <TableHead>Country</TableHead>
                 <TableHead>Registered</TableHead>
@@ -592,21 +498,15 @@ export default function Patients() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {loading ? (
-                <TableRow>
+              {loading ? <TableRow>
                   <TableCell colSpan={isSuperAdmin ? 7 : 6} className="text-center py-8">
                     Loading patients...
                   </TableCell>
-                </TableRow>
-              ) : filteredPatients.length === 0 ? (
-                <TableRow>
+                </TableRow> : filteredPatients.length === 0 ? <TableRow>
                   <TableCell colSpan={isSuperAdmin ? 7 : 6} className="text-center py-8 text-muted-foreground">
                     No patients found
                   </TableCell>
-                </TableRow>
-              ) : (
-                filteredPatients.map((patient) => (
-                  <TableRow key={patient.id} className="cursor-pointer hover:bg-muted/50">
+                </TableRow> : filteredPatients.map(patient => <TableRow key={patient.id} className="cursor-pointer hover:bg-muted/50">
                     <TableCell onClick={() => handleEdit(patient)}>
                       <div className="flex items-center gap-2">
                         <Avatar className="w-8 h-8">
@@ -617,34 +517,28 @@ export default function Patients() {
                         </Avatar>
                         <div>
                           <div className="font-medium">{patient.first_name} {patient.last_name}</div>
-                          {patient.gender && (
-                            <div className="text-xs text-muted-foreground">{patient.gender}</div>
-                          )}
+                          {patient.gender && <div className="text-xs text-muted-foreground">{patient.gender}</div>}
                         </div>
                       </div>
                     </TableCell>
                     <TableCell onClick={() => handleEdit(patient)}>
                       <div className="space-y-1">
-                        {patient.email && (
-                          <div className="flex items-center gap-1 text-sm">
+                        {patient.email && <div className="flex items-center gap-1 text-sm">
                             <Mail className="w-3 h-3 text-muted-foreground" />
                             <span className="text-muted-foreground">{patient.email}</span>
-                          </div>
-                        )}
+                          </div>}
                         <div className="flex items-center gap-1 text-sm">
                           <Phone className="w-3 h-3 text-muted-foreground" />
                           <span className="text-muted-foreground">{patient.phone}</span>
                         </div>
                       </div>
                     </TableCell>
-                    {isSuperAdmin && (
-                      <TableCell onClick={() => handleEdit(patient)}>
+                    {isSuperAdmin && <TableCell onClick={() => handleEdit(patient)}>
                         <Badge variant="outline" className="flex items-center gap-1 w-fit">
                           <Building2 className="w-3 h-3" />
                           {patient.organizations?.name || '-'}
                         </Badge>
-                      </TableCell>
-                    )}
+                      </TableCell>}
                     <TableCell onClick={() => handleEdit(patient)} className="text-sm text-muted-foreground">
                       {patient.date_of_birth ? format(new Date(patient.date_of_birth), 'MMM dd, yyyy') : '-'}
                     </TableCell>
@@ -659,22 +553,16 @@ export default function Patients() {
                         <Button variant="ghost" size="sm" onClick={() => handleEdit(patient)}>
                           Edit
                         </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setSelectedPatient(patient);
-                            setShowPatientDetails(true);
-                          }}
-                        >
+                        <Button variant="outline" size="sm" onClick={e => {
+                    e.stopPropagation();
+                    setSelectedPatient(patient);
+                    setShowPatientDetails(true);
+                  }}>
                           Details
                         </Button>
                       </div>
                     </TableCell>
-                  </TableRow>
-                ))
-              )}
+                  </TableRow>)}
             </TableBody>
           </Table>
         </div>
@@ -688,14 +576,8 @@ export default function Patients() {
               Patient Details - {selectedPatient?.first_name} {selectedPatient?.last_name}
             </DialogTitle>
           </DialogHeader>
-          {selectedPatient && (
-            <PatientDetails
-              patientId={selectedPatient.id}
-              onClose={() => setShowPatientDetails(false)}
-            />
-          )}
+          {selectedPatient && <PatientDetails patientId={selectedPatient.id} onClose={() => setShowPatientDetails(false)} />}
         </DialogContent>
       </Dialog>
-    </Layout>
-  );
+    </Layout>;
 }
