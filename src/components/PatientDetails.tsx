@@ -9,8 +9,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Calendar, Hotel, Car, FileText, Plus, Upload, Download, Trash2, Edit } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Calendar, Hotel, Car, FileText, Plus, Upload, Download, Trash2, Eye } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
 
@@ -47,6 +47,7 @@ export function PatientDetails({ patientId, onClose }: PatientDetailsProps) {
   const [transfers, setTransfers] = useState<any[]>([]);
   const [treatments, setTreatments] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [viewingDocument, setViewingDocument] = useState<{ url: string; name: string; type: string } | null>(null);
 
   const [appointmentForm, setAppointmentForm] = useState({
     appointment_date: '',
@@ -167,6 +168,29 @@ export function PatientDetails({ patientId, onClose }: PatientDetailsProps) {
       toast({
         title: 'Error',
         description: 'Failed to upload document',
+        variant: 'destructive'
+      });
+    }
+  };
+
+  const handleViewDocument = async (filePath: string, fileName: string, fileType: string) => {
+    try {
+      const { data, error } = await supabase.storage
+        .from('patient-documents')
+        .createSignedUrl(filePath, 3600);
+
+      if (error) throw error;
+
+      setViewingDocument({
+        url: data.signedUrl,
+        name: fileName,
+        type: fileType
+      });
+    } catch (error) {
+      console.error('Error viewing document:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to view document',
         variant: 'destructive'
       });
     }
@@ -457,6 +481,13 @@ export function PatientDetails({ patientId, onClose }: PatientDetailsProps) {
                             <Button
                               size="sm"
                               variant="ghost"
+                              onClick={() => handleViewDocument(doc.file_path, doc.document_name, doc.document_type)}
+                            >
+                              <Eye className="w-4 h-4" />
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="ghost"
                               onClick={() => handleDownloadDocument(doc.file_path, doc.document_name)}
                             >
                               <Download className="w-4 h-4" />
@@ -480,6 +511,38 @@ export function PatientDetails({ patientId, onClose }: PatientDetailsProps) {
         </TabsContent>
 
       </Tabs>
+
+      {/* Document Viewer Dialog */}
+      <Dialog open={!!viewingDocument} onOpenChange={() => setViewingDocument(null)}>
+        <DialogContent className="max-w-4xl max-h-[90vh]">
+          <DialogHeader>
+            <DialogTitle>{viewingDocument?.name}</DialogTitle>
+          </DialogHeader>
+          <div className="flex-1 overflow-auto">
+            {viewingDocument?.type.includes('pdf') ? (
+              <iframe
+                src={viewingDocument.url}
+                className="w-full h-[70vh] border-0"
+                title={viewingDocument.name}
+              />
+            ) : viewingDocument?.type.includes('image') ? (
+              <img
+                src={viewingDocument.url}
+                alt={viewingDocument.name}
+                className="max-w-full h-auto mx-auto"
+              />
+            ) : (
+              <div className="text-center py-8">
+                <p className="text-muted-foreground mb-4">Bu dosya türü önizlenemiyor.</p>
+                <Button onClick={() => viewingDocument && handleDownloadDocument(viewingDocument.url, viewingDocument.name)}>
+                  <Download className="w-4 h-4 mr-2" />
+                  İndir
+                </Button>
+              </div>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
