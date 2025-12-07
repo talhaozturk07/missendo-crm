@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Calendar, Hotel, Car, FileText, Plus, Upload, Download, Trash2, Eye } from 'lucide-react';
+import { Calendar, FileText, Plus, Upload, Download, Trash2, Eye, MessageSquare } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
 
@@ -38,11 +38,20 @@ interface Document {
   notes: string | null;
 }
 
+interface PatientNote {
+  id: string;
+  note_date: string;
+  content: string;
+  created_at: string;
+  created_by: string | null;
+}
+
 export function PatientDetails({ patientId, onClose }: PatientDetailsProps) {
   const { profile } = useAuth();
   const { toast } = useToast();
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [documents, setDocuments] = useState<Document[]>([]);
+  const [notes, setNotes] = useState<PatientNote[]>([]);
   const [hotels, setHotels] = useState<any[]>([]);
   const [transfers, setTransfers] = useState<any[]>([]);
   const [treatments, setTreatments] = useState<any[]>([]);
@@ -60,6 +69,11 @@ export function PatientDetails({ patientId, onClose }: PatientDetailsProps) {
   const [documentFile, setDocumentFile] = useState<File | null>(null);
   const [documentNotes, setDocumentNotes] = useState('');
 
+  const [noteForm, setNoteForm] = useState({
+    note_date: new Date().toISOString().split('T')[0],
+    content: ''
+  });
+
   useEffect(() => {
     loadData();
   }, [patientId]);
@@ -67,9 +81,10 @@ export function PatientDetails({ patientId, onClose }: PatientDetailsProps) {
   const loadData = async () => {
     try {
       setLoading(true);
-      const [appointmentsRes, documentsRes, hotelsRes, transfersRes, treatmentsRes] = await Promise.all([
+      const [appointmentsRes, documentsRes, notesRes, hotelsRes, transfersRes, treatmentsRes] = await Promise.all([
         supabase.from('appointments').select('*, treatments(name), hotels(hotel_name), transfer_services(company_name)').eq('patient_id', patientId),
         supabase.from('patient_documents').select('*').eq('patient_id', patientId),
+        supabase.from('patient_notes').select('*').eq('patient_id', patientId).order('note_date', { ascending: false }),
         supabase.from('hotels').select('*').eq('organization_id', profile?.organization_id),
         supabase.from('transfer_services').select('*').eq('organization_id', profile?.organization_id),
         supabase.from('treatments').select('*').eq('organization_id', profile?.organization_id)
@@ -77,6 +92,7 @@ export function PatientDetails({ patientId, onClose }: PatientDetailsProps) {
 
       setAppointments(appointmentsRes.data || []);
       setDocuments(documentsRes.data || []);
+      setNotes(notesRes.data || []);
       setHotels(hotelsRes.data || []);
       setTransfers(transfersRes.data || []);
       setTreatments(treatmentsRes.data || []);
@@ -278,13 +294,156 @@ export function PatientDetails({ patientId, onClose }: PatientDetailsProps) {
     }
   };
 
+  const handleAddNote = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!noteForm.content.trim()) return;
+
+    try {
+      const { error } = await supabase.from('patient_notes').insert([{
+        patient_id: patientId,
+        organization_id: profile?.organization_id,
+        note_date: noteForm.note_date,
+        content: noteForm.content,
+        created_by: profile?.id
+      }]);
+
+      if (error) throw error;
+
+      toast({
+        title: 'Başarılı',
+        description: 'Not eklendi'
+      });
+
+      setNoteForm({
+        note_date: new Date().toISOString().split('T')[0],
+        content: ''
+      });
+
+      loadData();
+    } catch (error) {
+      console.error('Error adding note:', error);
+      toast({
+        title: 'Hata',
+        description: 'Not eklenemedi',
+        variant: 'destructive'
+      });
+    }
+  };
+
+  const handleDeleteNote = async (noteId: string) => {
+    try {
+      const { error } = await supabase
+        .from('patient_notes')
+        .delete()
+        .eq('id', noteId);
+
+      if (error) throw error;
+
+      toast({
+        title: 'Başarılı',
+        description: 'Not silindi'
+      });
+
+      loadData();
+    } catch (error) {
+      console.error('Error deleting note:', error);
+      toast({
+        title: 'Hata',
+        description: 'Not silinemedi',
+        variant: 'destructive'
+      });
+    }
+  };
+
   return (
     <div className="space-y-6">
-      <Tabs defaultValue="appointments" className="w-full">
-        <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="appointments">Appointments</TabsTrigger>
-          <TabsTrigger value="documents">Documents</TabsTrigger>
+      <Tabs defaultValue="notes" className="w-full">
+        <TabsList className="grid w-full grid-cols-3">
+          <TabsTrigger value="notes">Notlar</TabsTrigger>
+          <TabsTrigger value="appointments">Randevular</TabsTrigger>
+          <TabsTrigger value="documents">Belgeler</TabsTrigger>
         </TabsList>
+
+        <TabsContent value="notes" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <MessageSquare className="h-5 w-5" />
+                Yeni Not Ekle
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <form onSubmit={handleAddNote} className="space-y-4">
+                <div className="grid grid-cols-4 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="note_date">Tarih *</Label>
+                    <Input
+                      id="note_date"
+                      type="date"
+                      value={noteForm.note_date}
+                      onChange={(e) => setNoteForm({...noteForm, note_date: e.target.value})}
+                      required
+                    />
+                  </div>
+                  <div className="col-span-3 space-y-2">
+                    <Label htmlFor="note_content">Not *</Label>
+                    <Textarea
+                      id="note_content"
+                      value={noteForm.content}
+                      onChange={(e) => setNoteForm({...noteForm, content: e.target.value})}
+                      placeholder="Notunuzu yazın..."
+                      rows={2}
+                      required
+                    />
+                  </div>
+                </div>
+                <Button type="submit">
+                  <Plus className="w-4 h-4 mr-2" />
+                  Not Ekle
+                </Button>
+              </form>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Not Geçmişi</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {notes.length === 0 ? (
+                <p className="text-muted-foreground text-center py-4">Henüz not eklenmemiş</p>
+              ) : (
+                <div className="space-y-4">
+                  {notes.map(note => (
+                    <div key={note.id} className="flex gap-4 p-4 border rounded-lg bg-muted/30">
+                      <div className="flex-shrink-0 w-24 text-center">
+                        <div className="text-sm font-semibold text-primary">
+                          {format(new Date(note.note_date), 'dd MMM')}
+                        </div>
+                        <div className="text-xs text-muted-foreground">
+                          {format(new Date(note.note_date), 'yyyy')}
+                        </div>
+                      </div>
+                      <div className="flex-1">
+                        <p className="text-sm whitespace-pre-wrap">{note.content}</p>
+                        <p className="text-xs text-muted-foreground mt-2">
+                          Eklenme: {format(new Date(note.created_at), 'dd.MM.yyyy HH:mm')}
+                        </p>
+                      </div>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => handleDeleteNote(note.id)}
+                      >
+                        <Trash2 className="w-4 h-4 text-destructive" />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
 
         <TabsContent value="appointments" className="space-y-4">
           <Card>
