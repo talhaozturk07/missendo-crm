@@ -756,7 +756,7 @@ export function PatientDetails({ patientId, onClose }: PatientDetailsProps) {
           {/* Payment Summary Card */}
           <Card className="border-l-4 border-l-primary">
             <CardContent className="pt-6">
-              <div className="grid grid-cols-3 gap-4 text-center">
+              <div className={`grid ${remainingDebt > 0 ? 'grid-cols-3' : 'grid-cols-2'} gap-4 text-center`}>
                 <div>
                   <p className="text-sm text-muted-foreground">Toplam Tutar</p>
                   <p className="text-2xl font-bold text-foreground">${totalCost.toLocaleString()}</p>
@@ -765,12 +765,14 @@ export function PatientDetails({ patientId, onClose }: PatientDetailsProps) {
                   <p className="text-sm text-muted-foreground">Ödenen</p>
                   <p className="text-2xl font-bold text-green-600">${totalPaid.toLocaleString()}</p>
                 </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">Kalan Borç</p>
-                  <p className={`text-2xl font-bold ${remainingDebt > 0 ? 'text-destructive' : 'text-green-600'}`}>
-                    ${remainingDebt.toLocaleString()}
-                  </p>
-                </div>
+                {remainingDebt > 0 && (
+                  <div>
+                    <p className="text-sm text-muted-foreground">Kalan Borç</p>
+                    <p className="text-2xl font-bold text-destructive">
+                      ${remainingDebt.toLocaleString()}
+                    </p>
+                  </div>
+                )}
               </div>
             </CardContent>
           </Card>
