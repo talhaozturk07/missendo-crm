@@ -73,6 +73,8 @@ interface PatientTransfer {
   transfer_datetime: string;
   notes: string | null;
   created_at: string;
+  hotel_id: string | null;
+  hotels?: { hotel_name: string } | null;
 }
 
 export function PatientDetails({ patientId, onClose }: PatientDetailsProps) {
@@ -140,7 +142,8 @@ export function PatientDetails({ patientId, onClose }: PatientDetailsProps) {
     flight_info: '',
     airport_pickup_info: '',
     transfer_datetime: '',
-    notes: ''
+    notes: '',
+    hotel_id: ''
   });
 
   useEffect(() => {
@@ -155,7 +158,7 @@ export function PatientDetails({ patientId, onClose }: PatientDetailsProps) {
         supabase.from('patient_documents').select('*').eq('patient_id', patientId),
         supabase.from('patient_notes').select('*').eq('patient_id', patientId).order('note_date', { ascending: false }),
         supabase.from('patient_payments').select('*').eq('patient_id', patientId).order('payment_date', { ascending: false }),
-        supabase.from('patient_transfers').select('*').eq('patient_id', patientId).order('transfer_datetime', { ascending: false }),
+        supabase.from('patient_transfers').select('*, hotels(hotel_name)').eq('patient_id', patientId).order('transfer_datetime', { ascending: false }),
         supabase.from('patients').select('total_cost, total_paid, first_name, last_name, email, phone, date_of_birth, gender, country, address, medical_condition, allergies, notes, photo_url, has_companion, companion_first_name, companion_last_name, companion_phone').eq('id', patientId).maybeSingle(),
         supabase.from('hotels').select('*').eq('organization_id', profile?.organization_id),
         supabase.from('transfer_services').select('*').eq('organization_id', profile?.organization_id),
@@ -568,6 +571,7 @@ export function PatientDetails({ patientId, onClose }: PatientDetailsProps) {
         airport_pickup_info: transferForm.airport_pickup_info || null,
         transfer_datetime: transferForm.transfer_datetime,
         notes: transferForm.notes || null,
+        hotel_id: transferForm.hotel_id || null,
         created_by: profile?.id
       }]);
 
@@ -583,7 +587,8 @@ export function PatientDetails({ patientId, onClose }: PatientDetailsProps) {
         flight_info: '',
         airport_pickup_info: '',
         transfer_datetime: '',
-        notes: ''
+        notes: '',
+        hotel_id: ''
       });
 
       loadData();
@@ -969,7 +974,7 @@ export function PatientDetails({ patientId, onClose }: PatientDetailsProps) {
                     />
                   </div>
                 </div>
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-3 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="airport_pickup_info">Airport Pickup</Label>
                     <Input
@@ -988,6 +993,20 @@ export function PatientDetails({ patientId, onClose }: PatientDetailsProps) {
                       onChange={(e) => setTransferForm({...transferForm, transfer_datetime: e.target.value})}
                       required
                     />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="transfer_hotel">Hotel</Label>
+                    <Select value={transferForm.hotel_id} onValueChange={(value) => setTransferForm({...transferForm, hotel_id: value})}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select hotel" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="">No hotel</SelectItem>
+                        {hotels.filter(h => h.is_active).map(hotel => (
+                          <SelectItem key={hotel.id} value={hotel.id}>{hotel.hotel_name}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
                 </div>
                 <div className="space-y-2">
@@ -1021,6 +1040,7 @@ export function PatientDetails({ patientId, onClose }: PatientDetailsProps) {
                     <TableRow>
                       <TableHead>Date & Time</TableHead>
                       <TableHead>Clinic</TableHead>
+                      <TableHead>Hotel</TableHead>
                       <TableHead>Flight</TableHead>
                       <TableHead>Pickup</TableHead>
                       <TableHead>Note</TableHead>
@@ -1032,6 +1052,7 @@ export function PatientDetails({ patientId, onClose }: PatientDetailsProps) {
                       <TableRow key={transfer.id}>
                         <TableCell>{format(new Date(transfer.transfer_datetime), 'dd.MM.yyyy HH:mm')}</TableCell>
                         <TableCell>{transfer.clinic_name || '-'}</TableCell>
+                        <TableCell>{transfer.hotels?.hotel_name || '-'}</TableCell>
                         <TableCell className="font-mono">{transfer.flight_info || '-'}</TableCell>
                         <TableCell>{transfer.airport_pickup_info || '-'}</TableCell>
                         <TableCell>{transfer.notes || '-'}</TableCell>
