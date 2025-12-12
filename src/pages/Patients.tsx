@@ -32,6 +32,11 @@ interface Patient {
   organizations?: {
     name: string;
   } | null;
+  patient_treatments?: {
+    treatments: {
+      name: string;
+    } | null;
+  }[];
 }
 interface Organization {
   id: string;
@@ -95,7 +100,7 @@ export default function Patients() {
   const loadPatients = async () => {
     if (!profile) return;
     try {
-      let query = supabase.from('patients').select('*, organizations(name)').order('created_at', {
+      let query = supabase.from('patients').select('*, organizations(name), patient_treatments(treatments(name))').order('created_at', {
         ascending: false
       });
       if (!isSuperAdmin && profile.organization_id) {
@@ -277,7 +282,16 @@ export default function Patients() {
     }
     setIsDialogOpen(true);
   };
-  const filteredPatients = patients.filter(patient => `${patient.first_name} ${patient.last_name} ${patient.email} ${patient.phone}`.toLowerCase().includes(searchQuery.toLowerCase()));
+  const filteredPatients = patients.filter(patient => {
+    const searchLower = searchQuery.toLowerCase();
+    const fullName = `${patient.first_name} ${patient.last_name}`.toLowerCase();
+    const clinicName = patient.organizations?.name?.toLowerCase() || '';
+    const treatmentNames = patient.patient_treatments?.map(pt => pt.treatments?.name?.toLowerCase() || '').join(' ') || '';
+    
+    return fullName.includes(searchLower) || 
+           clinicName.includes(searchLower) || 
+           treatmentNames.includes(searchLower);
+  });
   return <Layout>
       <div className="space-y-6">
         <div className="flex justify-between items-center">
@@ -484,7 +498,7 @@ export default function Patients() {
 
         <div className="relative">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
-          <Input placeholder="Search patients by name, email, or phone..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)} className="pl-10" />
+          <Input placeholder="Search patients by name, clinic, or service..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)} className="pl-10" />
         </div>
 
         <div className="bg-card rounded-lg border">
