@@ -622,6 +622,7 @@ export type Database = {
           created_at: string | null
           created_by: string | null
           flight_info: string | null
+          hotel_id: string | null
           id: string
           notes: string | null
           organization_id: string
@@ -635,6 +636,7 @@ export type Database = {
           created_at?: string | null
           created_by?: string | null
           flight_info?: string | null
+          hotel_id?: string | null
           id?: string
           notes?: string | null
           organization_id: string
@@ -648,6 +650,7 @@ export type Database = {
           created_at?: string | null
           created_by?: string | null
           flight_info?: string | null
+          hotel_id?: string | null
           id?: string
           notes?: string | null
           organization_id?: string
@@ -656,6 +659,13 @@ export type Database = {
           updated_at?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "patient_transfers_hotel_id_fkey"
+            columns: ["hotel_id"]
+            isOneToOne: false
+            referencedRelation: "hotels"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "patient_transfers_organization_id_fkey"
             columns: ["organization_id"]
