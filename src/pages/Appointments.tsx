@@ -5,7 +5,7 @@ import Layout from '@/components/Layout';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Calendar as CalendarIcon, Clock, User, MapPin, Hotel, Car, FileText, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Calendar as CalendarIcon, Clock, User, MapPin, Hotel, Car, FileText, ChevronLeft, ChevronRight, ChevronDown, ChevronUp } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { format, addDays, startOfWeek, isSameDay, isToday, parseISO } from 'date-fns';
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '@/components/ui/carousel';
@@ -13,6 +13,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Calendar } from '@/components/ui/calendar';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { cn } from '@/lib/utils';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 
 interface Appointment {
   id: string;
@@ -48,10 +49,12 @@ const statusColors: Record<string, string> = {
 export default function Appointments() {
   const { profile, isSuperAdmin } = useAuth();
   const [appointments, setAppointments] = useState<Appointment[]>([]);
+  const [upcomingAppointments, setUpcomingAppointments] = useState<Appointment[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [selectedAppointment, setSelectedAppointment] = useState<Appointment | null>(null);
   const [detailsOpen, setDetailsOpen] = useState(false);
+  const [upcomingOpen, setUpcomingOpen] = useState(false);
   const { toast } = useToast();
 
   // Generate 14 days starting from today
@@ -68,6 +71,7 @@ export default function Appointments() {
 
   useEffect(() => {
     loadAppointments();
+    loadUpcomingAppointments();
   }, [profile, selectedDate]);
 
   const loadAppointments = async () => {
@@ -111,6 +115,42 @@ export default function Appointments() {
       });
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadUpcomingAppointments = async () => {
+    if (!profile) return;
+
+    try {
+      // Get next 3 upcoming appointments after today
+      const tomorrow = new Date(selectedDate);
+      tomorrow.setDate(tomorrow.getDate() + 1);
+      tomorrow.setHours(0, 0, 0, 0);
+
+      let query = supabase
+        .from('appointments')
+        .select(`
+          *,
+          patients (first_name, last_name, phone, email),
+          treatments (name, base_price, duration_minutes),
+          hotels (hotel_name, address, price_per_night),
+          transfer_services (company_name, service_type, price)
+        `)
+        .gte('appointment_date', tomorrow.toISOString())
+        .eq('status', 'scheduled')
+        .order('appointment_date')
+        .limit(3);
+
+      if (!isSuperAdmin && profile.organization_id) {
+        query = query.eq('organization_id', profile.organization_id);
+      }
+
+      const { data, error } = await query;
+
+      if (error) throw error;
+      setUpcomingAppointments(data || []);
+    } catch (error) {
+      console.error('Error loading upcoming appointments:', error);
     }
   };
 
@@ -274,6 +314,101 @@ export default function Appointments() {
             )}
           </CardContent>
         </Card>
+
+        {/* Upcoming Appointments Collapsible */}
+        {upcomingAppointments.length > 0 && (
+          <Collapsible open={upcomingOpen} onOpenChange={setUpcomingOpen}>
+            <Card>
+              <CollapsibleTrigger asChild>
+                <CardHeader className="cursor-pointer hover:bg-accent/5 transition-colors">
+                  <CardTitle className="flex items-center justify-between">
+                    <span className="flex items-center gap-2">
+                      <Clock className="w-5 h-5 text-muted-foreground" />
+                      Upcoming Appointments ({upcomingAppointments.length})
+                    </span>
+                    {upcomingOpen ? (
+                      <ChevronUp className="w-5 h-5 text-muted-foreground" />
+                    ) : (
+                      <ChevronDown className="w-5 h-5 text-muted-foreground" />
+                    )}
+                  </CardTitle>
+                </CardHeader>
+              </CollapsibleTrigger>
+              
+              {/* Preview when collapsed */}
+              {!upcomingOpen && (
+                <CardContent className="pt-0">
+                  <div className="space-y-2">
+                    {upcomingAppointments.map((apt) => (
+                      <div
+                        key={apt.id}
+                        onClick={() => handleAppointmentClick(apt)}
+                        className="flex items-center justify-between p-2 rounded-lg bg-muted/30 hover:bg-accent/10 cursor-pointer transition-colors text-sm"
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className="text-muted-foreground font-mono">
+                            {format(new Date(apt.appointment_date), 'dd MMM')}
+                          </div>
+                          <div className="font-medium">
+                            {format(new Date(apt.appointment_date), 'HH:mm')}
+                          </div>
+                          <div className="text-muted-foreground">
+                            {apt.patients?.first_name} {apt.patients?.last_name}
+                          </div>
+                        </div>
+                        <Badge className={cn(statusColors[apt.status], "text-xs")}>
+                          {apt.status}
+                        </Badge>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              )}
+
+              <CollapsibleContent>
+                <CardContent className="pt-0 space-y-3">
+                  {upcomingAppointments.map((apt) => (
+                    <div
+                      key={apt.id}
+                      onClick={() => handleAppointmentClick(apt)}
+                      className="border rounded-lg p-4 hover:bg-accent/5 cursor-pointer transition-colors"
+                    >
+                      <div className="flex items-start justify-between mb-2">
+                        <div className="flex items-center gap-3">
+                          <div className="flex flex-col">
+                            <span className="text-lg font-semibold">
+                              {format(new Date(apt.appointment_date), 'p')}
+                            </span>
+                            <span className="text-xs text-muted-foreground">
+                              {format(new Date(apt.appointment_date), 'PPP')}
+                            </span>
+                          </div>
+                          <div className="h-12 w-px bg-border" />
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <User className="w-4 h-4 text-primary" />
+                              <span className="font-medium">
+                                {apt.patients?.first_name} {apt.patients?.last_name}
+                              </span>
+                            </div>
+                            {apt.treatments && (
+                              <div className="text-sm text-muted-foreground mt-1">
+                                {apt.treatments.name}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                        <Badge className={statusColors[apt.status]}>
+                          {apt.status}
+                        </Badge>
+                      </div>
+                    </div>
+                  ))}
+                </CardContent>
+              </CollapsibleContent>
+            </Card>
+          </Collapsible>
+        )}
       </div>
 
       {/* Appointment Details Dialog */}
