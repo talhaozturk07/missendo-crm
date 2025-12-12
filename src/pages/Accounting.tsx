@@ -92,6 +92,7 @@ const EXPENSE_CATEGORIES = [
   'Rent & Utilities',
   'Marketing',
   'Transportation',
+  'Hotel Accommodation',
   'Administrative',
   'Other Expense'
 ];
@@ -102,6 +103,7 @@ const REFERENCE_TYPES = [
   { value: 'treatment', label: 'Treatment' },
   { value: 'transfer', label: 'Transfer' },
   { value: 'hotel', label: 'Hotel' },
+  { value: 'hotel_booking', label: 'Hotel Booking' },
   { value: 'other', label: 'Other' }
 ];
 

@@ -153,6 +153,15 @@ export function PatientDetails({ patientId, onClose }: PatientDetailsProps) {
     destination_hotel_id: '',
     destination_clinic_id: ''
   });
+
+  const [hotelBookingForm, setHotelBookingForm] = useState({
+    hotel_id: '',
+    room_type: 'single',
+    check_in_date: '',
+    nights_count: '',
+    has_companion: false,
+  });
+
   const [organizations, setOrganizations] = useState<any[]>([]);
 
   useEffect(() => {
@@ -655,6 +664,92 @@ export function PatientDetails({ patientId, onClose }: PatientDetailsProps) {
     }
   };
 
+  const getRoomPrice = (hotel: any, roomType: string) => {
+    switch (roomType) {
+      case 'single': return hotel.single_room_price || hotel.price_per_night;
+      case 'double': return hotel.double_room_price || hotel.price_per_night;
+      case 'family': return hotel.family_room_price || hotel.price_per_night;
+      default: return hotel.price_per_night;
+    }
+  };
+
+  const handleAddHotelBooking = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!hotelBookingForm.hotel_id || !hotelBookingForm.check_in_date || !hotelBookingForm.nights_count) return;
+
+    try {
+      const selectedHotel = hotels.find(h => h.id === hotelBookingForm.hotel_id);
+      if (!selectedHotel) return;
+
+      const roomPrice = getRoomPrice(selectedHotel, hotelBookingForm.room_type);
+      const nights = parseInt(hotelBookingForm.nights_count);
+      let totalCost = roomPrice * nights;
+      
+      if (hotelBookingForm.has_companion && selectedHotel.companion_price) {
+        totalCost += selectedHotel.companion_price * nights;
+      }
+
+      // Calculate check-out date
+      const checkIn = new Date(hotelBookingForm.check_in_date);
+      checkIn.setDate(checkIn.getDate() + nights);
+      const checkOutDate = checkIn.toISOString().split('T')[0];
+
+      // Create appointment with hotel booking
+      const { error: aptError } = await supabase.from('appointments').insert([{
+        patient_id: patientId,
+        organization_id: profile?.organization_id,
+        appointment_date: `${hotelBookingForm.check_in_date}T12:00:00`,
+        hotel_id: hotelBookingForm.hotel_id,
+        room_type: hotelBookingForm.room_type,
+        check_in_date: hotelBookingForm.check_in_date,
+        check_out_date: checkOutDate,
+        nights_count: nights,
+        has_companion: hotelBookingForm.has_companion,
+        notes: `Hotel Booking: ${selectedHotel.hotel_name} - ${hotelBookingForm.room_type} room`,
+        status: 'scheduled',
+        created_by: profile?.id
+      }]);
+
+      if (aptError) throw aptError;
+
+      // Add to income_expenses for accounting
+      await supabase.from('income_expenses').insert([{
+        organization_id: profile?.organization_id,
+        type: 'expense',
+        category: 'Hotel Accommodation',
+        amount: totalCost,
+        currency: selectedHotel.currency || 'USD',
+        description: `Hotel: ${selectedHotel.hotel_name} - ${hotelBookingForm.room_type} room x ${nights} nights`,
+        date: hotelBookingForm.check_in_date,
+        reference_type: 'hotel_booking',
+        notes: `Patient: ${patientInfo?.first_name} ${patientInfo?.last_name}`,
+        created_by: profile?.id
+      }]);
+
+      toast({
+        title: 'Success',
+        description: 'Hotel booking added'
+      });
+
+      setHotelBookingForm({
+        hotel_id: '',
+        room_type: 'single',
+        check_in_date: '',
+        nights_count: '',
+        has_companion: false,
+      });
+
+      loadData();
+    } catch (error) {
+      console.error('Error adding hotel booking:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to add hotel booking',
+        variant: 'destructive'
+      });
+    }
+  };
+
   const totalCost = patientInfo?.total_cost || 0;
   const totalPaid = patientInfo?.total_paid || 0;
   const remainingDebt = totalCost - totalPaid;
@@ -1135,6 +1230,122 @@ export function PatientDetails({ patientId, onClose }: PatientDetailsProps) {
                 <Button type="submit">
                   <Plus className="w-4 h-4 mr-2" />
                   Add Transfer
+                </Button>
+              </form>
+            </CardContent>
+          </Card>
+
+          {/* Hotel Booking Card */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Calendar className="h-5 w-5" />
+                Add Hotel Booking
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <form onSubmit={handleAddHotelBooking} className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="booking_hotel">Hotel *</Label>
+                    <Select 
+                      value={hotelBookingForm.hotel_id || "none"} 
+                      onValueChange={(value) => setHotelBookingForm({...hotelBookingForm, hotel_id: value === "none" ? "" : value})}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select hotel" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="none">Select a hotel</SelectItem>
+                        {hotels.filter(h => h.is_active).map(hotel => (
+                          <SelectItem key={hotel.id} value={hotel.id}>
+                            {hotel.hotel_name} {'⭐'.repeat(hotel.star_rating || 3)}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="room_type">Room Type *</Label>
+                    <Select 
+                      value={hotelBookingForm.room_type} 
+                      onValueChange={(value) => setHotelBookingForm({...hotelBookingForm, room_type: value})}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select room type" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="single">Single Room</SelectItem>
+                        <SelectItem value="double">Double Room</SelectItem>
+                        <SelectItem value="family">Family Room</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    {hotelBookingForm.hotel_id && (
+                      <div className="text-xs text-muted-foreground">
+                        {(() => {
+                          const hotel = hotels.find(h => h.id === hotelBookingForm.hotel_id);
+                          if (!hotel) return '';
+                          const price = getRoomPrice(hotel, hotelBookingForm.room_type);
+                          return `Price: ${hotel.currency || 'USD'} ${price?.toFixed(2) || 'N/A'}/night`;
+                        })()}
+                      </div>
+                    )}
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="booking_check_in">Check-in Date *</Label>
+                    <Input
+                      id="booking_check_in"
+                      type="date"
+                      value={hotelBookingForm.check_in_date}
+                      onChange={(e) => setHotelBookingForm({...hotelBookingForm, check_in_date: e.target.value})}
+                      required
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="booking_nights">Number of Nights *</Label>
+                    <Input
+                      id="booking_nights"
+                      type="number"
+                      min="1"
+                      value={hotelBookingForm.nights_count}
+                      onChange={(e) => setHotelBookingForm({...hotelBookingForm, nights_count: e.target.value})}
+                      required
+                    />
+                  </div>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="booking_companion"
+                    checked={hotelBookingForm.has_companion}
+                    onCheckedChange={(checked) => setHotelBookingForm({...hotelBookingForm, has_companion: checked as boolean})}
+                  />
+                  <Label htmlFor="booking_companion" className="font-normal cursor-pointer">Has Companion (+extra cost)</Label>
+                </div>
+                
+                {hotelBookingForm.hotel_id && hotelBookingForm.nights_count && (
+                  <div className="p-3 bg-muted rounded-lg">
+                    <span className="text-sm text-muted-foreground">Estimated Cost: </span>
+                    <span className="font-bold">
+                      {(() => {
+                        const hotel = hotels.find(h => h.id === hotelBookingForm.hotel_id);
+                        if (!hotel) return '-';
+                        const roomPrice = getRoomPrice(hotel, hotelBookingForm.room_type);
+                        const nights = parseInt(hotelBookingForm.nights_count) || 0;
+                        let total = roomPrice * nights;
+                        if (hotelBookingForm.has_companion && hotel.companion_price) {
+                          total += hotel.companion_price * nights;
+                        }
+                        return `${hotel.currency || 'USD'} ${total.toFixed(2)}`;
+                      })()}
+                    </span>
+                  </div>
+                )}
+                
+                <Button type="submit">
+                  <Plus className="w-4 h-4 mr-2" />
+                  Add Hotel Booking
                 </Button>
               </form>
             </CardContent>

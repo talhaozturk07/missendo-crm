@@ -30,6 +30,7 @@ export type Database = {
           notes: string | null
           organization_id: string
           patient_id: string
+          room_type: string | null
           status: Database["public"]["Enums"]["appointment_status"] | null
           transfer_id: string | null
           treatment_id: string | null
@@ -50,6 +51,7 @@ export type Database = {
           notes?: string | null
           organization_id: string
           patient_id: string
+          room_type?: string | null
           status?: Database["public"]["Enums"]["appointment_status"] | null
           transfer_id?: string | null
           treatment_id?: string | null
@@ -70,6 +72,7 @@ export type Database = {
           notes?: string | null
           organization_id?: string
           patient_id?: string
+          room_type?: string | null
           status?: Database["public"]["Enums"]["appointment_status"] | null
           transfer_id?: string | null
           treatment_id?: string | null

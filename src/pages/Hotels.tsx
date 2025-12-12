@@ -104,6 +104,7 @@ export default function Hotels() {
     has_companion: false,
     check_in_date: '',
     check_out_date: '',
+    room_type: 'single',
   });
 
   useEffect(() => {
@@ -266,6 +267,7 @@ export default function Hotels() {
         has_companion: bookingFormData.has_companion,
         check_in_date: bookingFormData.check_in_date || null,
         check_out_date: bookingFormData.check_out_date || null,
+        room_type: bookingFormData.room_type || 'single',
       };
 
       const { error } = await supabase
@@ -318,6 +320,7 @@ export default function Hotels() {
       has_companion: false,
       check_in_date: '',
       check_out_date: '',
+      room_type: 'single',
     });
     setSelectedBooking(null);
   };
@@ -349,6 +352,7 @@ export default function Hotels() {
       has_companion: booking.has_companion || false,
       check_in_date: booking.check_in_date || '',
       check_out_date: booking.check_out_date || '',
+      room_type: (booking as any).room_type || 'single',
     });
     setIsBookingDialogOpen(true);
   };
@@ -377,9 +381,19 @@ export default function Hotels() {
     });
   };
 
+  const getRoomPrice = (hotel: any, roomType: string) => {
+    switch (roomType) {
+      case 'single': return hotel.single_room_price || hotel.price_per_night;
+      case 'double': return hotel.double_room_price || hotel.price_per_night;
+      case 'family': return hotel.family_room_price || hotel.price_per_night;
+      default: return hotel.price_per_night;
+    }
+  };
+
   const calculateTotalCost = (booking: PatientHotelBooking) => {
     if (!booking.hotel || !booking.nights_count) return 0;
-    let total = booking.hotel.price_per_night * booking.nights_count;
+    const roomPrice = getRoomPrice(booking.hotel, (booking as any).room_type || 'single');
+    let total = roomPrice * booking.nights_count;
     if (booking.has_companion && booking.hotel.companion_price) {
       total += booking.hotel.companion_price * booking.nights_count;
     }
@@ -842,11 +856,35 @@ export default function Hotels() {
                   <SelectContent>
                     {hotels.filter(h => h.is_active).map(hotel => (
                       <SelectItem key={hotel.id} value={hotel.id}>
-                        {hotel.hotel_name} - {hotel.city} ({hotel.currency} {hotel.price_per_night}/night)
+                        {hotel.hotel_name} - {hotel.city} {'⭐'.repeat(hotel.star_rating || 3)}
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="booking_room_type">Room Type *</Label>
+                <Select value={bookingFormData.room_type} onValueChange={(value) => setBookingFormData({ ...bookingFormData, room_type: value })}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select room type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="single">Single Room</SelectItem>
+                    <SelectItem value="double">Double Room</SelectItem>
+                    <SelectItem value="family">Family Room</SelectItem>
+                  </SelectContent>
+                </Select>
+                {bookingFormData.hotel_id && (
+                  <div className="text-xs text-muted-foreground">
+                    {(() => {
+                      const hotel = hotels.find(h => h.id === bookingFormData.hotel_id);
+                      if (!hotel) return '';
+                      const price = getRoomPrice(hotel, bookingFormData.room_type);
+                      return `Price: ${hotel.currency} ${price?.toFixed(2) || 'N/A'}/night`;
+                    })()}
+                  </div>
+                )}
               </div>
 
               <div className="grid grid-cols-2 gap-4">
@@ -899,7 +937,8 @@ export default function Hotels() {
                     {(() => {
                       const hotel = hotels.find(h => h.id === bookingFormData.hotel_id);
                       if (!hotel) return '-';
-                      let total = hotel.price_per_night * parseInt(bookingFormData.nights_count);
+                      const roomPrice = getRoomPrice(hotel, bookingFormData.room_type);
+                      let total = roomPrice * parseInt(bookingFormData.nights_count);
                       if (bookingFormData.has_companion && hotel.companion_price) {
                         total += hotel.companion_price * parseInt(bookingFormData.nights_count);
                       }
