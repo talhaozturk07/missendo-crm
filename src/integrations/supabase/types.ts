@@ -646,10 +646,15 @@ export type Database = {
       }
       patient_transfers: {
         Row: {
+          airline: string | null
           airport_pickup_info: string | null
+          arrival_airport: string | null
+          arrival_time: string | null
           clinic_name: string | null
           created_at: string | null
           created_by: string | null
+          departure_airport: string | null
+          departure_time: string | null
           destination: string | null
           flight_info: string | null
           hotel_id: string | null
@@ -659,13 +664,19 @@ export type Database = {
           origin: string | null
           patient_id: string
           transfer_datetime: string
+          transfer_type: string | null
           updated_at: string | null
         }
         Insert: {
+          airline?: string | null
           airport_pickup_info?: string | null
+          arrival_airport?: string | null
+          arrival_time?: string | null
           clinic_name?: string | null
           created_at?: string | null
           created_by?: string | null
+          departure_airport?: string | null
+          departure_time?: string | null
           destination?: string | null
           flight_info?: string | null
           hotel_id?: string | null
@@ -675,13 +686,19 @@ export type Database = {
           origin?: string | null
           patient_id: string
           transfer_datetime: string
+          transfer_type?: string | null
           updated_at?: string | null
         }
         Update: {
+          airline?: string | null
           airport_pickup_info?: string | null
+          arrival_airport?: string | null
+          arrival_time?: string | null
           clinic_name?: string | null
           created_at?: string | null
           created_by?: string | null
+          departure_airport?: string | null
+          departure_time?: string | null
           destination?: string | null
           flight_info?: string | null
           hotel_id?: string | null
@@ -691,6 +708,7 @@ export type Database = {
           origin?: string | null
           patient_id?: string
           transfer_datetime?: string
+          transfer_type?: string | null
           updated_at?: string | null
         }
         Relationships: [

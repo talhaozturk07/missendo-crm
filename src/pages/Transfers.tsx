@@ -25,7 +25,7 @@ import {
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Plus, Search, Car, Plane, Calendar, Clock, User } from 'lucide-react';
+import { Plus, Search, Car, Plane, Calendar, Clock, User, PlaneTakeoff, PlaneLanding } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { format, isAfter, isBefore, isToday, addDays } from 'date-fns';
 
@@ -50,6 +50,14 @@ interface PatientTransfer {
   transfer_datetime: string;
   notes: string | null;
   created_at: string;
+  transfer_type: string | null;
+  departure_airport: string | null;
+  arrival_airport: string | null;
+  airline: string | null;
+  departure_time: string | null;
+  arrival_time: string | null;
+  origin: string | null;
+  destination: string | null;
   patients: {
     first_name: string;
     last_name: string;
@@ -212,7 +220,11 @@ export default function Transfers() {
     `${transfer.company_name} ${transfer.service_type}`.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  // Categorize patient transfers
+  // Categorize patient transfers by type
+  const arrivalTransfers = patientTransfers.filter(t => t.transfer_type === 'arrival' || !t.transfer_type);
+  const departureTransfers = patientTransfers.filter(t => t.transfer_type === 'departure');
+
+  // Categorize by time
   const now = new Date();
   const todayTransfers = patientTransfers.filter(t => isToday(new Date(t.transfer_datetime)));
   const upcomingTransfers = patientTransfers.filter(t => {
@@ -235,12 +247,21 @@ export default function Transfers() {
       ? 'border-l-4 border-l-blue-500 bg-blue-50 dark:bg-blue-950/20'
       : '';
     
+    const isArrival = transfer.transfer_type === 'arrival' || !transfer.transfer_type;
+    
     return (
       <div className={`p-4 rounded-lg border ${bgClass}`}>
         <div className="flex justify-between items-start">
           <div className="space-y-1">
             <div className="flex items-center gap-2">
-              <User className="w-4 h-4 text-primary" />
+              {isArrival ? (
+                <PlaneLanding className="w-4 h-4 text-green-600" />
+              ) : (
+                <PlaneTakeoff className="w-4 h-4 text-blue-600" />
+              )}
+              <Badge variant={isArrival ? "default" : "secondary"} className={isArrival ? "bg-green-100 text-green-800" : "bg-blue-100 text-blue-800"}>
+                {isArrival ? 'Geliş' : 'Dönüş'}
+              </Badge>
               <span className="font-semibold">
                 {transfer.patients?.first_name} {transfer.patients?.last_name}
               </span>
@@ -252,33 +273,47 @@ export default function Transfers() {
           <div className="text-right">
             <div className="flex items-center gap-1 text-sm font-medium">
               <Calendar className="w-4 h-4" />
-              {format(new Date(transfer.transfer_datetime), 'MMM dd, yyyy')}
-            </div>
-            <div className="flex items-center gap-1 text-sm text-muted-foreground">
-              <Clock className="w-4 h-4" />
-              {format(new Date(transfer.transfer_datetime), 'HH:mm')}
+              {format(new Date(transfer.transfer_datetime), 'dd MMM yyyy')}
             </div>
           </div>
         </div>
         
-        <div className="mt-3 grid grid-cols-2 gap-2 text-sm">
-          {transfer.flight_info && (
-            <div className="flex items-center gap-2">
-              <Plane className="w-4 h-4 text-muted-foreground" />
-              <span className="font-mono">{transfer.flight_info}</span>
+        {/* Flight Route */}
+        <div className="mt-3 p-3 bg-muted/50 rounded-lg">
+          <div className="flex items-center justify-between gap-4">
+            <div className="text-center flex-1">
+              <div className="text-xs text-muted-foreground mb-1">Kalkış</div>
+              <div className="font-mono font-bold text-lg">{transfer.departure_airport || transfer.origin || '-'}</div>
+              {transfer.departure_time && (
+                <div className="text-sm text-muted-foreground">{transfer.departure_time.slice(0, 5)}</div>
+              )}
             </div>
-          )}
-          {transfer.clinic_name && (
-            <div className="text-muted-foreground">
-              Clinic: {transfer.clinic_name}
+            <div className="flex flex-col items-center">
+              <Plane className="w-5 h-5 text-muted-foreground rotate-90" />
+              {transfer.airline && (
+                <div className="text-xs text-muted-foreground mt-1">{transfer.airline}</div>
+              )}
+              {transfer.flight_info && (
+                <div className="font-mono text-xs font-medium">{transfer.flight_info}</div>
+              )}
             </div>
-          )}
+            <div className="text-center flex-1">
+              <div className="text-xs text-muted-foreground mb-1">Varış</div>
+              <div className="font-mono font-bold text-lg">{transfer.arrival_airport || transfer.destination || '-'}</div>
+              {transfer.arrival_time && (
+                <div className="text-sm text-muted-foreground">{transfer.arrival_time.slice(0, 5)}</div>
+              )}
+            </div>
+          </div>
         </div>
-        
+
+        {/* Airport Pickup */}
         {transfer.airport_pickup_info && (
-          <p className="mt-2 text-sm text-muted-foreground">
-            Pickup: {transfer.airport_pickup_info}
-          </p>
+          <div className="mt-3 flex items-center gap-2 text-sm">
+            <Car className="w-4 h-4 text-muted-foreground" />
+            <span className="text-muted-foreground">Karşılama:</span>
+            <span>{transfer.airport_pickup_info}</span>
+          </div>
         )}
         
         {transfer.notes && (
@@ -295,8 +330,8 @@ export default function Transfers() {
       <div className="space-y-6">
         <div className="flex justify-between items-center">
           <div>
-            <h1 className="text-3xl font-bold">Transfers</h1>
-            <p className="text-muted-foreground mt-2">Manage patient transfers and transportation services</p>
+            <h1 className="text-3xl font-bold">Transferler</h1>
+            <p className="text-muted-foreground mt-2">Hasta transferlerini ve ulaşım hizmetlerini yönetin</p>
           </div>
         </div>
 
@@ -304,14 +339,14 @@ export default function Transfers() {
           <TabsList>
             <TabsTrigger value="patient-transfers" className="flex items-center gap-2">
               <Plane className="w-4 h-4" />
-              Patient Transfers
+              Hasta Transferleri
               {todayTransfers.length > 0 && (
                 <Badge variant="destructive" className="ml-1">{todayTransfers.length}</Badge>
               )}
             </TabsTrigger>
             <TabsTrigger value="services" className="flex items-center gap-2">
               <Car className="w-4 h-4" />
-              Transfer Services
+              Transfer Hizmetleri
             </TabsTrigger>
           </TabsList>
 
@@ -322,7 +357,7 @@ export default function Transfers() {
                 <CardHeader className="pb-3">
                   <CardTitle className="flex items-center gap-2 text-green-700 dark:text-green-400">
                     <Calendar className="w-5 h-5" />
-                    Today's Transfers ({todayTransfers.length})
+                    Bugünkü Transferler ({todayTransfers.length})
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-3">
@@ -339,7 +374,7 @@ export default function Transfers() {
                 <CardHeader className="pb-3">
                   <CardTitle className="flex items-center gap-2 text-blue-700 dark:text-blue-400">
                     <Clock className="w-5 h-5" />
-                    Upcoming Transfers - Next 7 Days ({upcomingTransfers.length})
+                    Yaklaşan Transferler - Önümüzdeki 7 Gün ({upcomingTransfers.length})
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-3">
@@ -356,7 +391,7 @@ export default function Transfers() {
                 <CardHeader className="pb-3">
                   <CardTitle className="flex items-center gap-2">
                     <Calendar className="w-5 h-5" />
-                    Scheduled Transfers ({futureTransfers.length})
+                    Planlanan Transferler ({futureTransfers.length})
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-3">
@@ -373,18 +408,20 @@ export default function Transfers() {
                 <CardHeader className="pb-3">
                   <CardTitle className="flex items-center gap-2 text-muted-foreground">
                     <Calendar className="w-5 h-5" />
-                    Past Transfers ({pastTransfers.length})
+                    Geçmiş Transferler ({pastTransfers.length})
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
                   <Table>
                     <TableHeader>
                       <TableRow>
-                        <TableHead>Patient</TableHead>
-                        <TableHead>Date & Time</TableHead>
-                        <TableHead>Flight</TableHead>
-                        <TableHead>Clinic</TableHead>
-                        <TableHead>Pickup</TableHead>
+                        <TableHead>Hasta</TableHead>
+                        <TableHead>Tür</TableHead>
+                        <TableHead>Tarih</TableHead>
+                        <TableHead>Kalkış → Varış</TableHead>
+                        <TableHead>Havayolu</TableHead>
+                        <TableHead>Uçuş</TableHead>
+                        <TableHead>Saatler</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -394,14 +431,22 @@ export default function Transfers() {
                             {transfer.patients?.first_name} {transfer.patients?.last_name}
                           </TableCell>
                           <TableCell>
-                            {format(new Date(transfer.transfer_datetime), 'MMM dd, yyyy HH:mm')}
+                            <Badge variant={transfer.transfer_type === 'departure' ? "secondary" : "default"} className={transfer.transfer_type === 'departure' ? "bg-blue-100 text-blue-800" : "bg-green-100 text-green-800"}>
+                              {transfer.transfer_type === 'departure' ? 'Dönüş' : 'Geliş'}
+                            </Badge>
                           </TableCell>
+                          <TableCell>
+                            {format(new Date(transfer.transfer_datetime), 'dd MMM yyyy')}
+                          </TableCell>
+                          <TableCell className="font-mono text-sm">
+                            {transfer.departure_airport || transfer.origin || '-'} → {transfer.arrival_airport || transfer.destination || '-'}
+                          </TableCell>
+                          <TableCell>{transfer.airline || '-'}</TableCell>
                           <TableCell className="font-mono text-sm">
                             {transfer.flight_info || '-'}
                           </TableCell>
-                          <TableCell>{transfer.clinic_name || '-'}</TableCell>
-                          <TableCell className="text-sm text-muted-foreground">
-                            {transfer.airport_pickup_info || '-'}
+                          <TableCell className="text-sm">
+                            {transfer.departure_time?.slice(0, 5) || '-'} - {transfer.arrival_time?.slice(0, 5) || '-'}
                           </TableCell>
                         </TableRow>
                       ))}
@@ -415,8 +460,8 @@ export default function Transfers() {
               <Card>
                 <CardContent className="py-12 text-center text-muted-foreground">
                   <Plane className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                  <p>No patient transfers found</p>
-                  <p className="text-sm mt-1">Transfers are added from patient profiles</p>
+                  <p>Hasta transferi bulunamadı</p>
+                  <p className="text-sm mt-1">Transferler hasta profillerinden eklenir</p>
                 </CardContent>
               </Card>
             )}
@@ -427,7 +472,7 @@ export default function Transfers() {
               <div className="relative flex-1 max-w-sm">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
                 <Input
-                  placeholder="Search services..."
+                  placeholder="Hizmet ara..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="pl-10"
@@ -437,38 +482,38 @@ export default function Transfers() {
                 <DialogTrigger asChild>
                   <Button onClick={resetForm}>
                     <Plus className="w-4 h-4 mr-2" />
-                    Add Service
+                    Hizmet Ekle
                   </Button>
                 </DialogTrigger>
                 <DialogContent className="max-w-2xl">
                   <DialogHeader>
-                    <DialogTitle>{selectedTransfer ? 'Edit Transfer Service' : 'Add New Transfer Service'}</DialogTitle>
+                    <DialogTitle>{selectedTransfer ? 'Transfer Hizmetini Düzenle' : 'Yeni Transfer Hizmeti Ekle'}</DialogTitle>
                   </DialogHeader>
                   <form onSubmit={handleSubmit} className="space-y-4">
                     <div className="space-y-2">
-                      <Label htmlFor="company_name">Company Name *</Label>
+                      <Label htmlFor="company_name">Şirket Adı *</Label>
                       <Input
                         id="company_name"
                         value={formData.company_name}
                         onChange={(e) => setFormData({ ...formData, company_name: e.target.value })}
-                        placeholder="e.g., Istanbul Transfer Co."
+                        placeholder="örn., İstanbul Transfer"
                         required
                       />
                     </div>
 
                     <div className="space-y-2">
-                      <Label htmlFor="service_type">Service Type</Label>
+                      <Label htmlFor="service_type">Hizmet Türü</Label>
                       <Input
                         id="service_type"
                         value={formData.service_type}
                         onChange={(e) => setFormData({ ...formData, service_type: e.target.value })}
-                        placeholder="e.g., Airport Pickup, VIP Transfer"
+                        placeholder="örn., Havalimanı Karşılama, VIP Transfer"
                       />
                     </div>
 
                     <div className="grid grid-cols-2 gap-4">
                       <div className="space-y-2">
-                        <Label htmlFor="price">Price *</Label>
+                        <Label htmlFor="price">Fiyat *</Label>
                         <Input
                           id="price"
                           type="number"
@@ -479,10 +524,10 @@ export default function Transfers() {
                         />
                       </div>
                       <div className="space-y-2">
-                        <Label htmlFor="currency">Currency</Label>
+                        <Label htmlFor="currency">Para Birimi</Label>
                         <Select value={formData.currency} onValueChange={(value) => setFormData({ ...formData, currency: value })}>
                           <SelectTrigger>
-                            <SelectValue placeholder="Select currency" />
+                            <SelectValue placeholder="Para birimi seçin" />
                           </SelectTrigger>
                           <SelectContent>
                             {CURRENCIES.map(curr => (
@@ -494,13 +539,13 @@ export default function Transfers() {
                     </div>
 
                     <div className="space-y-2">
-                      <Label htmlFor="notes">Notes</Label>
+                      <Label htmlFor="notes">Notlar</Label>
                       <Textarea
                         id="notes"
                         value={formData.notes}
                         onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
                         rows={3}
-                        placeholder="Additional information about the service..."
+                        placeholder="Hizmet hakkında ek bilgiler..."
                       />
                     </div>
 
@@ -512,15 +557,15 @@ export default function Transfers() {
                         onChange={(e) => setFormData({ ...formData, is_active: e.target.checked })}
                         className="rounded"
                       />
-                      <Label htmlFor="is_active">Active</Label>
+                      <Label htmlFor="is_active">Aktif</Label>
                     </div>
 
                     <div className="flex justify-end gap-2">
                       <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)}>
-                        Cancel
+                        İptal
                       </Button>
                       <Button type="submit">
-                        {selectedTransfer ? 'Update' : 'Create'} Service
+                        {selectedTransfer ? 'Güncelle' : 'Oluştur'}
                       </Button>
                     </div>
                   </form>
@@ -532,24 +577,24 @@ export default function Transfers() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Company</TableHead>
-                    <TableHead>Service Type</TableHead>
-                    <TableHead>Price</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Actions</TableHead>
+                    <TableHead>Şirket</TableHead>
+                    <TableHead>Hizmet Türü</TableHead>
+                    <TableHead>Fiyat</TableHead>
+                    <TableHead>Durum</TableHead>
+                    <TableHead>İşlemler</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {loading ? (
                     <TableRow>
                       <TableCell colSpan={5} className="text-center py-8">
-                        Loading transfer services...
+                        Transfer hizmetleri yükleniyor...
                       </TableCell>
                     </TableRow>
                   ) : filteredServices.length === 0 ? (
                     <TableRow>
                       <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
-                        No transfer services found
+                        Transfer hizmeti bulunamadı
                       </TableCell>
                     </TableRow>
                   ) : (
@@ -569,14 +614,14 @@ export default function Transfers() {
                         </TableCell>
                         <TableCell>
                           {transfer.is_active ? (
-                            <Badge className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">Active</Badge>
+                            <Badge className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">Aktif</Badge>
                           ) : (
-                            <Badge variant="secondary">Inactive</Badge>
+                            <Badge variant="secondary">Pasif</Badge>
                           )}
                         </TableCell>
                         <TableCell>
                           <Button variant="ghost" size="sm">
-                            Edit
+                            Düzenle
                           </Button>
                         </TableCell>
                       </TableRow>
