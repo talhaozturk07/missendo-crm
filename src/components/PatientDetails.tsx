@@ -79,6 +79,12 @@ interface PatientTransfer {
   hotels?: { hotel_name: string } | null;
   origin: string | null;
   destination: string | null;
+  transfer_type: string | null;
+  departure_airport: string | null;
+  arrival_airport: string | null;
+  airline: string | null;
+  departure_time: string | null;
+  arrival_time: string | null;
 }
 
 export function PatientDetails({ patientId, onClose }: PatientDetailsProps) {
@@ -144,17 +150,17 @@ export function PatientDetails({ patientId, onClose }: PatientDetailsProps) {
   });
 
   const [transferForm, setTransferForm] = useState({
-    clinic_name: '',
+    transfer_type: 'arrival' as 'arrival' | 'departure',
+    transfer_date: '',
+    departure_airport: '',
+    arrival_airport: '',
+    airline: '',
     flight_info: '',
+    departure_time: '',
+    arrival_time: '',
     airport_pickup_info: '',
-    transfer_datetime: '',
     notes: '',
     hotel_id: '',
-    origin: '',
-    destination: '',
-    destination_type: '' as '' | 'hotel' | 'clinic',
-    destination_hotel_id: '',
-    destination_clinic_id: ''
   });
 
   const [hotelBookingForm, setHotelBookingForm] = useState({
@@ -653,60 +659,58 @@ export function PatientDetails({ patientId, onClose }: PatientDetailsProps) {
 
   const handleAddTransfer = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!transferForm.transfer_datetime) return;
-
-    // Build destination based on type
-    let finalDestination = transferForm.destination;
-    if (transferForm.destination_type === 'hotel' && transferForm.destination_hotel_id) {
-      const selectedHotel = hotels.find(h => h.id === transferForm.destination_hotel_id);
-      finalDestination = selectedHotel?.hotel_name || '';
-    } else if (transferForm.destination_type === 'clinic' && transferForm.destination_clinic_id) {
-      const selectedOrg = organizations.find(o => o.id === transferForm.destination_clinic_id);
-      finalDestination = selectedOrg?.name || '';
-    }
+    if (!transferForm.transfer_date) return;
 
     try {
+      // Combine date and time for transfer_datetime
+      const transferDatetime = transferForm.departure_time 
+        ? `${transferForm.transfer_date}T${transferForm.departure_time}:00`
+        : `${transferForm.transfer_date}T12:00:00`;
+
       const { error } = await supabase.from('patient_transfers').insert([{
         patient_id: patientId,
         organization_id: profile?.organization_id,
-        clinic_name: transferForm.clinic_name || null,
+        transfer_type: transferForm.transfer_type,
+        departure_airport: transferForm.departure_airport || null,
+        arrival_airport: transferForm.arrival_airport || null,
+        airline: transferForm.airline || null,
         flight_info: transferForm.flight_info || null,
+        departure_time: transferForm.departure_time || null,
+        arrival_time: transferForm.arrival_time || null,
         airport_pickup_info: transferForm.airport_pickup_info || null,
-        transfer_datetime: transferForm.transfer_datetime,
+        transfer_datetime: transferDatetime,
         notes: transferForm.notes || null,
         hotel_id: transferForm.hotel_id || null,
-        origin: transferForm.origin || null,
-        destination: finalDestination || null,
         created_by: profile?.id
       }]);
 
       if (error) throw error;
 
       toast({
-        title: 'Success',
-        description: 'Transfer info added'
+        title: 'Başarılı',
+        description: 'Transfer bilgisi eklendi'
       });
 
       setTransferForm({
-        clinic_name: '',
+        transfer_type: 'arrival',
+        transfer_date: '',
+        departure_airport: '',
+        arrival_airport: '',
+        airline: '',
         flight_info: '',
+        departure_time: '',
+        arrival_time: '',
         airport_pickup_info: '',
-        transfer_datetime: '',
         notes: '',
         hotel_id: '',
-        origin: '',
-        destination: '',
-        destination_type: '',
-        destination_hotel_id: '',
-        destination_clinic_id: ''
       });
 
       loadData();
     } catch (error) {
       console.error('Error adding transfer:', error);
       toast({
-        title: 'Error',
-        description: 'Failed to add transfer info',
+        title: 'Hata',
+        description: 'Transfer bilgisi eklenemedi',
         variant: 'destructive'
       });
     }
@@ -1145,144 +1149,134 @@ export function PatientDetails({ patientId, onClose }: PatientDetailsProps) {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Plane className="h-5 w-5" />
-                Add Transfer Info
+                Transfer Bilgisi Ekle
               </CardTitle>
             </CardHeader>
             <CardContent>
               <form onSubmit={handleAddTransfer} className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="origin">From (Origin)</Label>
-                    <Input
-                      id="origin"
-                      value={transferForm.origin}
-                      onChange={(e) => setTransferForm({...transferForm, origin: e.target.value})}
-                      placeholder="e.g. Istanbul Airport"
+                {/* Transfer Type Selection */}
+                <div className="flex gap-4 p-3 bg-muted/50 rounded-lg">
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="radio"
+                      id="arrival"
+                      name="transfer_type"
+                      checked={transferForm.transfer_type === 'arrival'}
+                      onChange={() => setTransferForm({...transferForm, transfer_type: 'arrival'})}
+                      className="w-4 h-4"
                     />
+                    <Label htmlFor="arrival" className="font-medium cursor-pointer text-green-700">Geliş</Label>
                   </div>
-                  <div className="space-y-2">
-                    <Label>To (Destination)</Label>
-                    <div className="space-y-3">
-                      <div className="flex items-center gap-4">
-                        <div className="flex items-center gap-2">
-                          <Checkbox
-                            id="dest_hotel"
-                            checked={transferForm.destination_type === 'hotel'}
-                            onCheckedChange={(checked) => setTransferForm({
-                              ...transferForm,
-                              destination_type: checked ? 'hotel' : '',
-                              destination: '',
-                              destination_hotel_id: '',
-                              destination_clinic_id: ''
-                            })}
-                          />
-                          <Label htmlFor="dest_hotel" className="text-sm font-normal cursor-pointer">Is Hotel</Label>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <Checkbox
-                            id="dest_clinic"
-                            checked={transferForm.destination_type === 'clinic'}
-                            onCheckedChange={(checked) => setTransferForm({
-                              ...transferForm,
-                              destination_type: checked ? 'clinic' : '',
-                              destination: '',
-                              destination_hotel_id: '',
-                              destination_clinic_id: ''
-                            })}
-                          />
-                          <Label htmlFor="dest_clinic" className="text-sm font-normal cursor-pointer">Is Clinic</Label>
-                        </div>
-                      </div>
-                      
-                      {transferForm.destination_type === 'hotel' ? (
-                        <Select 
-                          value={transferForm.destination_hotel_id || "none"} 
-                          onValueChange={(value) => setTransferForm({...transferForm, destination_hotel_id: value === "none" ? "" : value})}
-                        >
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select hotel" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="none">Select a hotel</SelectItem>
-                            {hotels.filter(h => h.is_active).map(hotel => (
-                              <SelectItem key={hotel.id} value={hotel.id}>{hotel.hotel_name}</SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      ) : transferForm.destination_type === 'clinic' ? (
-                        <Select 
-                          value={transferForm.destination_clinic_id || "none"} 
-                          onValueChange={(value) => setTransferForm({...transferForm, destination_clinic_id: value === "none" ? "" : value})}
-                        >
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select clinic" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="none">Select a clinic</SelectItem>
-                            {organizations.map(org => (
-                              <SelectItem key={org.id} value={org.id}>{org.name}</SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      ) : (
-                        <Input
-                          id="destination"
-                          value={transferForm.destination}
-                          onChange={(e) => setTransferForm({...transferForm, destination: e.target.value})}
-                          placeholder="e.g. Grand Hyatt Hotel"
-                        />
-                      )}
-                    </div>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="radio"
+                      id="departure"
+                      name="transfer_type"
+                      checked={transferForm.transfer_type === 'departure'}
+                      onChange={() => setTransferForm({...transferForm, transfer_type: 'departure'})}
+                      className="w-4 h-4"
+                    />
+                    <Label htmlFor="departure" className="font-medium cursor-pointer text-blue-700">Dönüş</Label>
                   </div>
                 </div>
+
+                {/* Date */}
+                <div className="space-y-2">
+                  <Label htmlFor="transfer_date">Tarih *</Label>
+                  <Input
+                    id="transfer_date"
+                    type="date"
+                    value={transferForm.transfer_date}
+                    onChange={(e) => setTransferForm({...transferForm, transfer_date: e.target.value})}
+                    required
+                  />
+                </div>
+
+                {/* Airports */}
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="clinic_name">Clinic Name</Label>
+                    <Label htmlFor="departure_airport">Kalkış Havalimanı</Label>
                     <Input
-                      id="clinic_name"
-                      value={transferForm.clinic_name}
-                      onChange={(e) => setTransferForm({...transferForm, clinic_name: e.target.value})}
-                      placeholder="e.g. ABC Dental"
+                      id="departure_airport"
+                      value={transferForm.departure_airport}
+                      onChange={(e) => setTransferForm({...transferForm, departure_airport: e.target.value})}
+                      placeholder="örn. LAX, IST, JFK"
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="flight_info">Flight Info</Label>
+                    <Label htmlFor="arrival_airport">Varış Havalimanı</Label>
+                    <Input
+                      id="arrival_airport"
+                      value={transferForm.arrival_airport}
+                      onChange={(e) => setTransferForm({...transferForm, arrival_airport: e.target.value})}
+                      placeholder="örn. IST, SAW"
+                    />
+                  </div>
+                </div>
+
+                {/* Airline & Flight Number */}
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="airline">Havayolu</Label>
+                    <Input
+                      id="airline"
+                      value={transferForm.airline}
+                      onChange={(e) => setTransferForm({...transferForm, airline: e.target.value})}
+                      placeholder="örn. Turkish Airlines, Pegasus"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="flight_info">Uçuş Numarası</Label>
                     <Input
                       id="flight_info"
                       value={transferForm.flight_info}
                       onChange={(e) => setTransferForm({...transferForm, flight_info: e.target.value})}
-                      placeholder="e.g. TK555 LAX"
+                      placeholder="örn. TK555"
                     />
                   </div>
                 </div>
-                <div className="grid grid-cols-3 gap-4">
+
+                {/* Times */}
+                <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="airport_pickup_info">Airport Pickup</Label>
+                    <Label htmlFor="departure_time">Kalkış Saati</Label>
+                    <Input
+                      id="departure_time"
+                      type="time"
+                      value={transferForm.departure_time}
+                      onChange={(e) => setTransferForm({...transferForm, departure_time: e.target.value})}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="arrival_time">Varış Saati</Label>
+                    <Input
+                      id="arrival_time"
+                      type="time"
+                      value={transferForm.arrival_time}
+                      onChange={(e) => setTransferForm({...transferForm, arrival_time: e.target.value})}
+                    />
+                  </div>
+                </div>
+
+                {/* Airport Pickup & Hotel */}
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="airport_pickup_info">Havalimanı Karşılama</Label>
                     <Input
                       id="airport_pickup_info"
                       value={transferForm.airport_pickup_info}
                       onChange={(e) => setTransferForm({...transferForm, airport_pickup_info: e.target.value})}
-                      placeholder="e.g. Istanbul Airport Gate 5"
+                      placeholder="örn. Kapı 5, Terminal 2"
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="transfer_datetime">Date & Time *</Label>
-                    <Input
-                      id="transfer_datetime"
-                      type="datetime-local"
-                      value={transferForm.transfer_datetime}
-                      onChange={(e) => setTransferForm({...transferForm, transfer_datetime: e.target.value})}
-                      required
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="transfer_hotel">Hotel</Label>
+                    <Label htmlFor="transfer_hotel">Otel</Label>
                     <Select value={transferForm.hotel_id || "none"} onValueChange={(value) => setTransferForm({...transferForm, hotel_id: value === "none" ? "" : value})}>
                       <SelectTrigger>
-                        <SelectValue placeholder="Select hotel" />
+                        <SelectValue placeholder="Otel seçin" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="none">No hotel</SelectItem>
+                        <SelectItem value="none">Otel yok</SelectItem>
                         {hotels.filter(h => h.is_active).map(hotel => (
                           <SelectItem key={hotel.id} value={hotel.id}>{hotel.hotel_name}</SelectItem>
                         ))}
@@ -1290,19 +1284,22 @@ export function PatientDetails({ patientId, onClose }: PatientDetailsProps) {
                     </Select>
                   </div>
                 </div>
+
+                {/* Notes */}
                 <div className="space-y-2">
-                  <Label htmlFor="transfer_notes">Note</Label>
+                  <Label htmlFor="transfer_notes">Not</Label>
                   <Textarea
                     id="transfer_notes"
                     value={transferForm.notes}
                     onChange={(e) => setTransferForm({...transferForm, notes: e.target.value})}
                     rows={2}
-                    placeholder="Additional info..."
+                    placeholder="Ek bilgiler..."
                   />
                 </div>
+
                 <Button type="submit">
                   <Plus className="w-4 h-4 mr-2" />
-                  Add Transfer
+                  Transfer Ekle
                 </Button>
               </form>
             </CardContent>
@@ -1426,37 +1423,43 @@ export function PatientDetails({ patientId, onClose }: PatientDetailsProps) {
 
           <Card>
             <CardHeader>
-              <CardTitle>Transfer History</CardTitle>
+              <CardTitle>Transfer Geçmişi</CardTitle>
             </CardHeader>
             <CardContent>
               {patientTransfers.length === 0 ? (
-                <p className="text-muted-foreground text-center py-4">No transfer records yet</p>
+                <p className="text-muted-foreground text-center py-4">Henüz transfer kaydı yok</p>
               ) : (
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>Date & Time</TableHead>
-                      <TableHead>From → To</TableHead>
-                      <TableHead>Clinic</TableHead>
-                      <TableHead>Hotel</TableHead>
-                      <TableHead>Flight</TableHead>
-                      <TableHead>Note</TableHead>
-                      <TableHead>Action</TableHead>
+                      <TableHead>Tür</TableHead>
+                      <TableHead>Tarih</TableHead>
+                      <TableHead>Kalkış → Varış</TableHead>
+                      <TableHead>Havayolu</TableHead>
+                      <TableHead>Uçuş No</TableHead>
+                      <TableHead>Saatler</TableHead>
+                      <TableHead>Karşılama</TableHead>
+                      <TableHead>İşlem</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {patientTransfers.map(transfer => (
                       <TableRow key={transfer.id}>
-                        <TableCell>{format(new Date(transfer.transfer_datetime), 'dd.MM.yyyy HH:mm')}</TableCell>
                         <TableCell>
-                          {transfer.origin || transfer.destination ? (
-                            <span>{transfer.origin || '?'} → {transfer.destination || '?'}</span>
-                          ) : '-'}
+                          <Badge variant={transfer.transfer_type === 'departure' ? "secondary" : "default"} className={transfer.transfer_type === 'departure' ? "bg-blue-100 text-blue-800" : "bg-green-100 text-green-800"}>
+                            {transfer.transfer_type === 'departure' ? 'Dönüş' : 'Geliş'}
+                          </Badge>
                         </TableCell>
-                        <TableCell>{transfer.clinic_name || '-'}</TableCell>
-                        <TableCell>{transfer.hotels?.hotel_name || '-'}</TableCell>
+                        <TableCell>{format(new Date(transfer.transfer_datetime), 'dd.MM.yyyy')}</TableCell>
+                        <TableCell className="font-mono">
+                          {transfer.departure_airport || transfer.origin || '?'} → {transfer.arrival_airport || transfer.destination || '?'}
+                        </TableCell>
+                        <TableCell>{transfer.airline || '-'}</TableCell>
                         <TableCell className="font-mono">{transfer.flight_info || '-'}</TableCell>
-                        <TableCell>{transfer.notes || '-'}</TableCell>
+                        <TableCell className="text-sm">
+                          {transfer.departure_time?.slice(0, 5) || '-'} - {transfer.arrival_time?.slice(0, 5) || '-'}
+                        </TableCell>
+                        <TableCell className="text-sm text-muted-foreground">{transfer.airport_pickup_info || '-'}</TableCell>
                         <TableCell>
                           <Button
                             size="sm"
