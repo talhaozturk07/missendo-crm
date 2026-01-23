@@ -316,8 +316,8 @@ export default function Patients() {
       if (error) {
         if (error.code === '42501') {
           toast({
-            title: "Yetki Hatası",
-            description: "Bu hastayı silme yetkiniz yok. Yalnızca hastayı ekleyen kullanıcı veya yöneticiler silebilir.",
+            title: "Permission Error",
+            description: "You don't have permission to delete this patient. Only the user who added the patient or administrators can delete.",
             variant: "destructive"
           });
         } else {
@@ -325,16 +325,16 @@ export default function Patients() {
         }
       } else {
         toast({
-          title: "Başarılı",
-          description: "Hasta başarıyla silindi"
+          title: "Success",
+          description: "Patient deleted successfully"
         });
         loadPatients();
       }
     } catch (error) {
       console.error('Error deleting patient:', error);
       toast({
-        title: "Hata",
-        description: "Hasta silinirken bir hata oluştu",
+        title: "Error",
+        description: "An error occurred while deleting patient",
         variant: "destructive"
       });
     } finally {
@@ -541,11 +541,11 @@ export default function Patients() {
                 <div className="border-t pt-4 space-y-4">
                   <h4 className="font-medium text-sm flex items-center gap-2">
                     <DollarSign className="w-4 h-4" />
-                    Fiyatlandırma
+                    Pricing
                   </h4>
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <Label htmlFor="estimated_price">Tahmini Fiyat ($)</Label>
+                      <Label htmlFor="estimated_price">Estimated Price ($)</Label>
                       <Input
                         id="estimated_price"
                         type="number"
@@ -559,7 +559,7 @@ export default function Patients() {
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="final_price">Final Fiyat ($)</Label>
+                      <Label htmlFor="final_price">Final Price ($)</Label>
                       <Input
                         id="final_price"
                         type="number"
@@ -583,22 +583,22 @@ export default function Patients() {
                     has_companion: checked as boolean
                   })} />
                     <Label htmlFor="has_companion" className="font-medium cursor-pointer">
-                      Refakatçi Var
+                      Has Companion
                     </Label>
                   </div>
 
                   {formData.has_companion && <div className="pl-6 space-y-4 border-l-2 border-primary/20">
-                      <h4 className="font-medium text-sm">Refakatçi Bilgileri</h4>
+                      <h4 className="font-medium text-sm">Companion Information</h4>
                       <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
-                          <Label htmlFor="companion_first_name">Ad</Label>
+                          <Label htmlFor="companion_first_name">First Name</Label>
                           <Input id="companion_first_name" value={formData.companion_first_name} onChange={e => setFormData({
                         ...formData,
                         companion_first_name: e.target.value
                       })} />
                         </div>
                         <div className="space-y-2">
-                          <Label htmlFor="companion_last_name">Soyad</Label>
+                          <Label htmlFor="companion_last_name">Last Name</Label>
                           <Input id="companion_last_name" value={formData.companion_last_name} onChange={e => setFormData({
                         ...formData,
                         companion_last_name: e.target.value
@@ -607,14 +607,14 @@ export default function Patients() {
                       </div>
                       <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
-                          <Label htmlFor="companion_phone">Telefon</Label>
+                          <Label htmlFor="companion_phone">Phone</Label>
                           <Input id="companion_phone" value={formData.companion_phone} onChange={e => setFormData({
                         ...formData,
                         companion_phone: e.target.value
                       })} />
                         </div>
                         <div className="space-y-2">
-                          <Label htmlFor="companion_id_number">Kimlik No</Label>
+                          <Label htmlFor="companion_id_number">ID Number</Label>
                           <Input id="companion_id_number" value={formData.companion_id_number} onChange={e => setFormData({
                         ...formData,
                         companion_id_number: e.target.value
@@ -641,7 +641,7 @@ export default function Patients() {
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
             <Input 
-              placeholder="İsim, email, telefon, klinik, ülke veya tedavi ile ara..." 
+              placeholder="Search by name, email, phone, clinic, country or treatment..." 
               value={searchQuery} 
               onChange={e => setSearchQuery(e.target.value)} 
               className="pl-10" 
@@ -658,7 +658,7 @@ export default function Patients() {
               className="text-destructive hover:text-destructive"
             >
               <X className="h-4 w-4 mr-1" />
-              Filtreleri Temizle
+              Clear Filters
             </Button>
           )}
         </div>
@@ -667,29 +667,29 @@ export default function Patients() {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Hasta</TableHead>
-                <TableHead>İletişim</TableHead>
+                <TableHead>Patient</TableHead>
+                <TableHead>Contact</TableHead>
                 {isSuperAdmin && (
                   <TableHead className="p-0">
                     <ColumnFilter
-                      title="Klinik"
+                      title="Clinic"
                       options={clinicOptions}
                       selectedValues={clinicFilter}
                       onFilterChange={setClinicFilter}
                     />
                   </TableHead>
                 )}
-                <TableHead>Doğum Tarihi</TableHead>
+                <TableHead>Birth Date</TableHead>
                 <TableHead className="p-0">
                   <ColumnFilter
-                    title="Ülke"
+                    title="Country"
                     options={countryOptions}
                     selectedValues={countryFilter}
                     onFilterChange={setCountryFilter}
                   />
                 </TableHead>
-                <TableHead>Kayıt Tarihi</TableHead>
-                <TableHead>İşlemler</TableHead>
+                <TableHead>Registered</TableHead>
+                <TableHead>Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -748,20 +748,20 @@ export default function Patients() {
                         <Button variant="ghost" size="icon" className="h-8 w-8" onClick={(e) => {
                           e.stopPropagation();
                           handleEdit(patient);
-                        }} title="Düzenle">
+                        }} title="Edit">
                           <Pencil className="h-4 w-4" />
                         </Button>
                         <Button variant="ghost" size="icon" className="h-8 w-8" onClick={(e) => {
                           e.stopPropagation();
                           setSelectedPatient(patient);
                           setShowPatientDetails(true);
-                        }} title="Detaylar">
+                        }} title="Details">
                           <FileText className="h-4 w-4" />
                         </Button>
                         <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10" onClick={(e) => {
                           e.stopPropagation();
                           handleDeleteClick(patient);
-                        }} title="Sil">
+                        }} title="Delete">
                           <Trash2 className="h-4 w-4" />
                         </Button>
                       </div>
@@ -788,20 +788,20 @@ export default function Patients() {
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Hastayı Sil</AlertDialogTitle>
+            <AlertDialogTitle>Delete Patient</AlertDialogTitle>
             <AlertDialogDescription>
-              <strong>{patientToDelete?.first_name} {patientToDelete?.last_name}</strong> adlı hastayı silmek istediğinizden emin misiniz? 
-              Bu işlem geri alınamaz ve hastaya ait tüm veriler silinecektir.
+              Are you sure you want to delete <strong>{patientToDelete?.first_name} {patientToDelete?.last_name}</strong>? 
+              This action cannot be undone and all patient data will be deleted.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={isDeleting}>İptal</AlertDialogCancel>
+            <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
             <AlertDialogAction 
               onClick={handleDeleteConfirm} 
               disabled={isDeleting}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
-              {isDeleting ? 'Siliniyor...' : 'Sil'}
+              {isDeleting ? 'Deleting...' : 'Delete'}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
