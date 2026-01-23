@@ -13,7 +13,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
-import { Calendar, FileText, Plus, Upload, Download, Trash2, Eye, MessageSquare, CreditCard, Plane, DollarSign, User, Phone, Mail, MapPin, ExternalLink, ChevronLeft, ChevronRight, Pencil, Video } from 'lucide-react';
+import { Calendar, FileText, Plus, Upload, Download, Trash2, Eye, MessageSquare, CreditCard, Plane, DollarSign, User, Phone, Mail, MapPin, ExternalLink, ChevronLeft, ChevronRight, Pencil, Video, Image, Scan } from 'lucide-react';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
@@ -47,6 +47,7 @@ interface Document {
   file_path: string;
   created_at: string;
   notes: string | null;
+  category: 'photo' | 'xray' | 'document';
 }
 
 interface PatientNote {
@@ -139,6 +140,8 @@ export function PatientDetails({ patientId, onClose }: PatientDetailsProps) {
 
   const [documentFiles, setDocumentFiles] = useState<File[]>([]);
   const [documentNotes, setDocumentNotes] = useState('');
+  const [documentCategory, setDocumentCategory] = useState<'photo' | 'xray' | 'document'>('document');
+  const [showCategoryDialog, setShowCategoryDialog] = useState(false);
   const [editingDocument, setEditingDocument] = useState<{ id: string; name: string } | null>(null);
   const [uploadingDocuments, setUploadingDocuments] = useState(false);
   const [documentThumbnails, setDocumentThumbnails] = useState<Record<string, string>>({});
@@ -205,7 +208,10 @@ export function PatientDetails({ patientId, onClose }: PatientDetailsProps) {
       const treatmentTotal = (patientTreatmentsRes.data || []).reduce((sum, t) => sum + (Number(t.final_price) || 0), 0);
       
       setAppointments(appointmentsRes.data || []);
-      setDocuments(documentsRes.data || []);
+      setDocuments((documentsRes.data || []).map(doc => ({
+        ...doc,
+        category: (doc.category as 'photo' | 'xray' | 'document') || 'document'
+      })));
       setNotes(notesRes.data || []);
       setPayments(paymentsRes.data || []);
       setPatientTransfers(patientTransfersRes.data || []);
@@ -276,10 +282,25 @@ export function PatientDetails({ patientId, onClose }: PatientDetailsProps) {
     }
   };
 
-  const handleUploadDocuments = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleFileSelectAndShowCategory = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (files && files.length > 0) {
+      setDocumentFiles(Array.from(files));
+      // Auto-detect category based on file type
+      const firstFile = files[0];
+      if (firstFile.type.includes('image')) {
+        setDocumentCategory('photo');
+      } else {
+        setDocumentCategory('document');
+      }
+      setShowCategoryDialog(true);
+    }
+  };
+
+  const handleUploadDocuments = async () => {
     if (documentFiles.length === 0) return;
 
+    setShowCategoryDialog(false);
     setUploadingDocuments(true);
     let successCount = 0;
     let errorCount = 0;
@@ -304,7 +325,8 @@ export function PatientDetails({ patientId, onClose }: PatientDetailsProps) {
             file_path: fileName,
             file_size: file.size,
             uploaded_by: profile?.id,
-            notes: documentNotes || null
+            notes: documentNotes || null,
+            category: documentCategory
           }]);
 
           if (dbError) throw dbError;
@@ -318,7 +340,7 @@ export function PatientDetails({ patientId, onClose }: PatientDetailsProps) {
       if (successCount > 0) {
         toast({
           title: 'Success',
-          description: `${successCount} file(s) uploaded${errorCount > 0 ? `, ${errorCount} failed` : ''}`
+          description: `${successCount} file(s) uploaded as ${documentCategory === 'photo' ? 'Photos' : documentCategory === 'xray' ? 'X-Rays' : 'Documents'}${errorCount > 0 ? `, ${errorCount} failed` : ''}`
         });
       } else {
         toast({
@@ -330,6 +352,7 @@ export function PatientDetails({ patientId, onClose }: PatientDetailsProps) {
 
       setDocumentFiles([]);
       setDocumentNotes('');
+      setDocumentCategory('document');
       loadData();
     } catch (error) {
       console.error('Error uploading documents:', error);
@@ -354,11 +377,11 @@ export function PatientDetails({ patientId, onClose }: PatientDetailsProps) {
     setDocumentFiles(prev => prev.filter((_, i) => i !== index));
   };
 
-  // Load thumbnails for image documents
+  // Load thumbnails for image documents (both photos and xrays)
   useEffect(() => {
     const loadThumbnails = async () => {
       const imageDocuments = documents.filter(doc => 
-        doc.document_type.includes('image')
+        doc.document_type.includes('image') && (doc.category === 'photo' || doc.category === 'xray')
       );
       
       const newThumbnails: Record<string, string> = {};
@@ -1790,80 +1813,40 @@ export function PatientDetails({ patientId, onClose }: PatientDetailsProps) {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <form onSubmit={handleUploadDocuments} className="space-y-4">
+              <div className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="document">Files (PDF, PNG, JPEG, STL, MP4, MOV) - You can select multiple *</Label>
+                  <Label htmlFor="document">Select Files (PDF, PNG, JPEG, STL, MP4, MOV) *</Label>
                   <Input
                     id="document"
                     type="file"
                     accept=".pdf,.png,.jpg,.jpeg,.stl,.mp4,.mov,.avi,.webm"
-                    onChange={handleFileSelect}
+                    onChange={handleFileSelectAndShowCategory}
                     multiple
-                    required={documentFiles.length === 0}
                   />
                 </div>
-                
-                {/* Selected files preview */}
-                {documentFiles.length > 0 && (
-                  <div className="space-y-2">
-                    <Label>Selected Files ({documentFiles.length})</Label>
-                    <div className="flex flex-wrap gap-2">
-                      {documentFiles.map((file, index) => (
-                        <Badge key={index} variant="secondary" className="flex items-center gap-1 py-1 px-2">
-                          {file.type.includes('image') && (
-                            <img 
-                              src={URL.createObjectURL(file)} 
-                              alt="" 
-                              className="w-6 h-6 object-cover rounded"
-                            />
-                          )}
-                          <span className="max-w-32 truncate text-xs">{file.name}</span>
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="sm"
-                            className="h-4 w-4 p-0 hover:bg-destructive/20"
-                            onClick={() => removeSelectedFile(index)}
-                          >
-                            <Trash2 className="h-3 w-3" />
-                          </Button>
-                        </Badge>
-                      ))}
-                    </div>
+                {uploadingDocuments && (
+                  <div className="flex items-center gap-2 text-muted-foreground">
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary"></div>
+                    <span>Uploading files...</span>
                   </div>
                 )}
-
-                <div className="space-y-2">
-                  <Label htmlFor="doc-notes">Notes</Label>
-                  <Textarea
-                    id="doc-notes"
-                    value={documentNotes}
-                    onChange={(e) => setDocumentNotes(e.target.value)}
-                    rows={2}
-                    placeholder="Notes for all files..."
-                  />
-                </div>
-                <Button type="submit" disabled={documentFiles.length === 0 || uploadingDocuments}>
-                  <Upload className="w-4 h-4 mr-2" />
-                  {uploadingDocuments ? 'Uploading...' : `Upload ${documentFiles.length > 1 ? `${documentFiles.length} Files` : 'File'}`}
-                </Button>
-              </form>
+              </div>
             </CardContent>
           </Card>
 
-          {/* Image Gallery */}
-          {documents.filter(doc => doc.document_type.includes('image')).length > 0 && (
+          {/* Photos Gallery */}
+          {documents.filter(doc => doc.category === 'photo').length > 0 && (
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <Eye className="h-5 w-5" />
-                  Photos
+                  <Image className="h-5 w-5" />
+                  Photos ({documents.filter(doc => doc.category === 'photo').length})
                 </CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
                   {documents
-                    .filter(doc => doc.document_type.includes('image'))
+                    .filter(doc => doc.category === 'photo')
                     .map(doc => (
                       <div 
                         key={doc.id} 
@@ -1881,44 +1864,16 @@ export function PatientDetails({ patientId, onClose }: PatientDetailsProps) {
                             <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
                           </div>
                         )}
-                        {/* Overlay with actions */}
                         <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-2">
                           <p className="text-white text-xs text-center px-2 truncate max-w-full">{doc.document_name}</p>
                           <div className="flex gap-1">
-                            <Button
-                              size="sm"
-                              variant="secondary"
-                              className="h-7 w-7 p-0"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleDownloadDocument(doc.file_path, doc.document_name);
-                              }}
-                              title="Download"
-                            >
+                            <Button size="sm" variant="secondary" className="h-7 w-7 p-0" onClick={(e) => { e.stopPropagation(); handleDownloadDocument(doc.file_path, doc.document_name); }} title="Download">
                               <Download className="w-3 h-3" />
                             </Button>
-                            <Button
-                              size="sm"
-                              variant="secondary"
-                              className="h-7 w-7 p-0"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setEditingDocument({ id: doc.id, name: doc.document_name });
-                              }}
-                              title="Rename"
-                            >
+                            <Button size="sm" variant="secondary" className="h-7 w-7 p-0" onClick={(e) => { e.stopPropagation(); setEditingDocument({ id: doc.id, name: doc.document_name }); }} title="Rename">
                               <Pencil className="w-3 h-3" />
                             </Button>
-                            <Button
-                              size="sm"
-                              variant="destructive"
-                              className="h-7 w-7 p-0"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleDeleteDocument(doc.id, doc.file_path);
-                              }}
-                              title="Delete"
-                            >
+                            <Button size="sm" variant="destructive" className="h-7 w-7 p-0" onClick={(e) => { e.stopPropagation(); handleDeleteDocument(doc.id, doc.file_path); }} title="Delete">
                               <Trash2 className="w-3 h-3" />
                             </Button>
                           </div>
@@ -1930,13 +1885,67 @@ export function PatientDetails({ patientId, onClose }: PatientDetailsProps) {
             </Card>
           )}
 
-          {/* Other Documents (PDFs, videos, etc.) */}
+          {/* X-Rays Gallery */}
+          {documents.filter(doc => doc.category === 'xray').length > 0 && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Scan className="h-5 w-5" />
+                  X-Rays ({documents.filter(doc => doc.category === 'xray').length})
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+                  {documents
+                    .filter(doc => doc.category === 'xray')
+                    .map(doc => (
+                      <div 
+                        key={doc.id} 
+                        className="group relative aspect-square rounded-lg overflow-hidden border bg-muted cursor-pointer hover:ring-2 hover:ring-primary transition-all"
+                        onClick={() => handleViewDocument(doc.file_path, doc.document_name, doc.document_type)}
+                      >
+                        {documentThumbnails[doc.id] ? (
+                          <img
+                            src={documentThumbnails[doc.id]}
+                            alt={doc.document_name}
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center">
+                            <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
+                          </div>
+                        )}
+                        <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-2">
+                          <p className="text-white text-xs text-center px-2 truncate max-w-full">{doc.document_name}</p>
+                          <div className="flex gap-1">
+                            <Button size="sm" variant="secondary" className="h-7 w-7 p-0" onClick={(e) => { e.stopPropagation(); handleDownloadDocument(doc.file_path, doc.document_name); }} title="Download">
+                              <Download className="w-3 h-3" />
+                            </Button>
+                            <Button size="sm" variant="secondary" className="h-7 w-7 p-0" onClick={(e) => { e.stopPropagation(); setEditingDocument({ id: doc.id, name: doc.document_name }); }} title="Rename">
+                              <Pencil className="w-3 h-3" />
+                            </Button>
+                            <Button size="sm" variant="destructive" className="h-7 w-7 p-0" onClick={(e) => { e.stopPropagation(); handleDeleteDocument(doc.id, doc.file_path); }} title="Delete">
+                              <Trash2 className="w-3 h-3" />
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Documents List */}
           <Card>
             <CardHeader>
-              <CardTitle>Other Documents</CardTitle>
+              <CardTitle className="flex items-center gap-2">
+                <FileText className="h-5 w-5" />
+                Documents ({documents.filter(doc => doc.category === 'document').length})
+              </CardTitle>
             </CardHeader>
             <CardContent>
-              {documents.filter(doc => !doc.document_type.includes('image')).length === 0 ? (
+              {documents.filter(doc => doc.category === 'document').length === 0 ? (
                 <p className="text-muted-foreground text-center py-4">No documents uploaded yet</p>
               ) : (
                 <Table>
@@ -1950,7 +1959,7 @@ export function PatientDetails({ patientId, onClose }: PatientDetailsProps) {
                   </TableHeader>
                   <TableBody>
                     {documents
-                      .filter(doc => !doc.document_type.includes('image'))
+                      .filter(doc => doc.category === 'document')
                       .map(doc => (
                       <TableRow key={doc.id}>
                         <TableCell className="font-medium">
@@ -1961,25 +1970,13 @@ export function PatientDetails({ patientId, onClose }: PatientDetailsProps) {
                                 onChange={(e) => setEditingDocument({ ...editingDocument, name: e.target.value })}
                                 className="h-8 w-48"
                               />
-                              <Button
-                                size="sm"
-                                variant="ghost"
-                                onClick={() => handleRenameDocument(doc.id, editingDocument.name)}
-                              >
-                                Save
-                              </Button>
-                              <Button
-                                size="sm"
-                                variant="ghost"
-                                onClick={() => setEditingDocument(null)}
-                              >
-                                Cancel
-                              </Button>
+                              <Button size="sm" variant="ghost" onClick={() => handleRenameDocument(doc.id, editingDocument.name)}>Save</Button>
+                              <Button size="sm" variant="ghost" onClick={() => setEditingDocument(null)}>Cancel</Button>
                             </div>
                           ) : (
                             <div className="flex items-center gap-2">
                               {doc.document_type.includes('video') && <Video className="w-4 h-4 text-primary" />}
-                              {doc.document_type.includes('pdf') && <FileText className="w-4 h-4 text-red-500" />}
+                              {doc.document_type.includes('pdf') && <FileText className="w-4 h-4 text-destructive" />}
                               {doc.document_name}
                             </div>
                           )}
@@ -1988,36 +1985,16 @@ export function PatientDetails({ patientId, onClose }: PatientDetailsProps) {
                         <TableCell>{format(new Date(doc.created_at), 'dd.MM.yyyy')}</TableCell>
                         <TableCell>
                           <div className="flex gap-1">
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              onClick={() => setEditingDocument({ id: doc.id, name: doc.document_name })}
-                              title="Rename"
-                            >
+                            <Button size="sm" variant="ghost" onClick={() => setEditingDocument({ id: doc.id, name: doc.document_name })} title="Rename">
                               <Pencil className="w-4 h-4" />
                             </Button>
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              onClick={() => handleViewDocument(doc.file_path, doc.document_name, doc.document_type)}
-                              title="View"
-                            >
+                            <Button size="sm" variant="ghost" onClick={() => handleViewDocument(doc.file_path, doc.document_name, doc.document_type)} title="View">
                               <Eye className="w-4 h-4" />
                             </Button>
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              onClick={() => handleDownloadDocument(doc.file_path, doc.document_name)}
-                              title="Download"
-                            >
+                            <Button size="sm" variant="ghost" onClick={() => handleDownloadDocument(doc.file_path, doc.document_name)} title="Download">
                               <Download className="w-4 h-4" />
                             </Button>
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              onClick={() => handleDeleteDocument(doc.id, doc.file_path)}
-                              title="Delete"
-                            >
+                            <Button size="sm" variant="ghost" onClick={() => handleDeleteDocument(doc.id, doc.file_path)} title="Delete">
                               <Trash2 className="w-4 h-4 text-destructive" />
                             </Button>
                           </div>
@@ -2032,6 +2009,116 @@ export function PatientDetails({ patientId, onClose }: PatientDetailsProps) {
         </TabsContent>
 
       </Tabs>
+
+      {/* Category Selection Dialog */}
+      <Dialog open={showCategoryDialog} onOpenChange={(open) => {
+        if (!open) {
+          setShowCategoryDialog(false);
+          setDocumentFiles([]);
+          setDocumentCategory('document');
+        }
+      }}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Select File Category</DialogTitle>
+            <DialogDescription>
+              Choose where to save {documentFiles.length > 1 ? 'these files' : 'this file'}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            {/* Selected files preview */}
+            <div className="space-y-2">
+              <Label>Selected Files ({documentFiles.length})</Label>
+              <div className="flex flex-wrap gap-2 max-h-32 overflow-y-auto">
+                {documentFiles.map((file, index) => (
+                  <Badge key={index} variant="secondary" className="flex items-center gap-1 py-1 px-2">
+                    {file.type.includes('image') && (
+                      <img src={URL.createObjectURL(file)} alt="" className="w-6 h-6 object-cover rounded" />
+                    )}
+                    <span className="max-w-32 truncate text-xs">{file.name}</span>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="h-4 w-4 p-0 hover:bg-destructive/20"
+                      onClick={() => {
+                        const newFiles = documentFiles.filter((_, i) => i !== index);
+                        if (newFiles.length === 0) {
+                          setShowCategoryDialog(false);
+                          setDocumentFiles([]);
+                        } else {
+                          setDocumentFiles(newFiles);
+                        }
+                      }}
+                    >
+                      <Trash2 className="h-3 w-3" />
+                    </Button>
+                  </Badge>
+                ))}
+              </div>
+            </div>
+
+            {/* Category Selection */}
+            <div className="space-y-2">
+              <Label>Category *</Label>
+              <div className="grid grid-cols-3 gap-2">
+                <Button
+                  type="button"
+                  variant={documentCategory === 'photo' ? 'default' : 'outline'}
+                  className="flex flex-col items-center gap-1 h-auto py-3"
+                  onClick={() => setDocumentCategory('photo')}
+                >
+                  <Image className="h-5 w-5" />
+                  <span className="text-xs">Photo</span>
+                </Button>
+                <Button
+                  type="button"
+                  variant={documentCategory === 'xray' ? 'default' : 'outline'}
+                  className="flex flex-col items-center gap-1 h-auto py-3"
+                  onClick={() => setDocumentCategory('xray')}
+                >
+                  <Scan className="h-5 w-5" />
+                  <span className="text-xs">X-Ray</span>
+                </Button>
+                <Button
+                  type="button"
+                  variant={documentCategory === 'document' ? 'default' : 'outline'}
+                  className="flex flex-col items-center gap-1 h-auto py-3"
+                  onClick={() => setDocumentCategory('document')}
+                >
+                  <FileText className="h-5 w-5" />
+                  <span className="text-xs">Document</span>
+                </Button>
+              </div>
+            </div>
+
+            {/* Notes */}
+            <div className="space-y-2">
+              <Label htmlFor="category-notes">Notes (optional)</Label>
+              <Textarea
+                id="category-notes"
+                value={documentNotes}
+                onChange={(e) => setDocumentNotes(e.target.value)}
+                rows={2}
+                placeholder="Add notes for these files..."
+              />
+            </div>
+          </div>
+          <div className="flex justify-end gap-2">
+            <Button variant="outline" onClick={() => {
+              setShowCategoryDialog(false);
+              setDocumentFiles([]);
+              setDocumentCategory('document');
+            }}>
+              Cancel
+            </Button>
+            <Button onClick={handleUploadDocuments} disabled={uploadingDocuments}>
+              <Upload className="w-4 h-4 mr-2" />
+              {uploadingDocuments ? 'Uploading...' : `Upload as ${documentCategory === 'photo' ? 'Photo' : documentCategory === 'xray' ? 'X-Ray' : 'Document'}`}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Document Viewer Dialog - inline PDF viewer using blob URL */}
       <Dialog open={!!viewingDocument} onOpenChange={() => {
