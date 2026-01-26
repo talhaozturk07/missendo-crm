@@ -1,1 +1,13 @@
 project_id = "xzcpxatfzgusrxfreeoi"
+
+[functions.appointment-reminders]
+verify_jwt = false
+
+[functions.create-user]
+verify_jwt = false
+
+[functions.update-user-password]
+verify_jwt = false
+
+[functions.send-reminder-email]
+verify_jwt = false

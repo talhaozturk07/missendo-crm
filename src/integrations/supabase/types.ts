@@ -979,6 +979,86 @@ export type Database = {
           },
         ]
       }
+      reminders: {
+        Row: {
+          completed_at: string | null
+          created_at: string | null
+          created_by: string
+          email_sent_at: string | null
+          id: string
+          lead_id: string | null
+          notes: string | null
+          organization_id: string
+          patient_id: string | null
+          reminder_date: string
+          reminder_type: string
+          status: string
+          title: string
+          updated_at: string | null
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string | null
+          created_by: string
+          email_sent_at?: string | null
+          id?: string
+          lead_id?: string | null
+          notes?: string | null
+          organization_id: string
+          patient_id?: string | null
+          reminder_date: string
+          reminder_type?: string
+          status?: string
+          title: string
+          updated_at?: string | null
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string | null
+          created_by?: string
+          email_sent_at?: string | null
+          id?: string
+          lead_id?: string | null
+          notes?: string | null
+          organization_id?: string
+          patient_id?: string | null
+          reminder_date?: string
+          reminder_type?: string
+          status?: string
+          title?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reminders_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reminders_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reminders_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reminders_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "patients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       transfer_services: {
         Row: {
           company_name: string
