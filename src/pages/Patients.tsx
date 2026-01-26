@@ -711,26 +711,16 @@ export default function Patients() {
                       />
                     </TableHead>
                   )}
-                  <TableHead>Birth Date</TableHead>
-                  <TableHead className="p-0">
-                    <ColumnFilter
-                      title="Country"
-                      options={countryOptions}
-                      selectedValues={countryFilter}
-                      onFilterChange={setCountryFilter}
-                    />
-                  </TableHead>
-                  <TableHead>Registered</TableHead>
                   <TableHead>Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {loading ? <TableRow>
-                    <TableCell colSpan={isSuperAdmin ? 7 : 6} className="text-center py-8">
+                    <TableCell colSpan={isSuperAdmin ? 4 : 3} className="text-center py-8">
                       Loading patients...
                     </TableCell>
                   </TableRow> : filteredPatients.length === 0 ? <TableRow>
-                    <TableCell colSpan={isSuperAdmin ? 7 : 6} className="text-center py-8 text-muted-foreground">
+                    <TableCell colSpan={isSuperAdmin ? 4 : 3} className="text-center py-8 text-muted-foreground">
                       No patients found
                     </TableCell>
                   </TableRow> : filteredPatients.map(patient => <TableRow key={patient.id} className="cursor-pointer hover:bg-muted/50">
@@ -766,15 +756,6 @@ export default function Patients() {
                             {patient.organizations?.name || '-'}
                           </Badge>
                         </TableCell>}
-                      <TableCell onClick={() => handleEdit(patient)} className="text-sm text-muted-foreground">
-                        {patient.date_of_birth ? format(new Date(patient.date_of_birth), 'MMM dd, yyyy') : '-'}
-                      </TableCell>
-                      <TableCell onClick={() => handleEdit(patient)} className="text-sm">
-                        {patient.country || '-'}
-                      </TableCell>
-                      <TableCell onClick={() => handleEdit(patient)} className="text-sm text-muted-foreground">
-                        {format(new Date(patient.created_at), 'MMM dd, yyyy')}
-                      </TableCell>
                       <TableCell>
                         <div className="flex gap-1">
                           <Button variant="ghost" size="icon" className="h-8 w-8" onClick={(e) => {

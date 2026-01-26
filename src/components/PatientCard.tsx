@@ -2,8 +2,7 @@ import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
-import { User, Phone, Mail, Building2, MapPin, Calendar, Pencil, FileText, Trash2 } from 'lucide-react';
-import { format } from 'date-fns';
+import { User, Phone, Mail, Building2, Pencil, FileText, Trash2 } from 'lucide-react';
 
 interface PatientCardProps {
   patient: {
@@ -102,23 +101,6 @@ export function PatientCard({ patient, isSuperAdmin, onEdit, onDetails, onDelete
               {patient.organizations.name}
             </Badge>
           )}
-          {patient.country && (
-            <Badge variant="secondary" className="text-xs">
-              <MapPin className="w-3 h-3 mr-1" />
-              {patient.country}
-            </Badge>
-          )}
-          {patient.date_of_birth && (
-            <Badge variant="secondary" className="text-xs">
-              <Calendar className="w-3 h-3 mr-1" />
-              {format(new Date(patient.date_of_birth), 'MMM dd, yyyy')}
-            </Badge>
-          )}
-        </div>
-
-        {/* Footer - Registration date */}
-        <div className="mt-3 pt-3 border-t text-xs text-muted-foreground">
-          Registered: {format(new Date(patient.created_at), 'MMM dd, yyyy')}
         </div>
       </CardContent>
     </Card>
