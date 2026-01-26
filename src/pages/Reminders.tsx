@@ -79,18 +79,18 @@ interface Lead {
 }
 
 const REMINDER_TYPES = [
-  { value: 'call_back', label: 'Geri Ara', icon: Phone },
-  { value: 'follow_up', label: 'Takip', icon: Calendar },
-  { value: 'unreachable', label: 'Ulaşılamadı', icon: PhoneOff },
-  { value: 'appointment', label: 'Randevu', icon: Calendar },
-  { value: 'custom', label: 'Özel', icon: Bell },
+  { value: 'call_back', label: 'Call Back', icon: Phone },
+  { value: 'follow_up', label: 'Follow Up', icon: Calendar },
+  { value: 'unreachable', label: 'Unreachable', icon: PhoneOff },
+  { value: 'appointment', label: 'Appointment', icon: Calendar },
+  { value: 'custom', label: 'Custom', icon: Bell },
 ];
 
 const STATUS_LABELS: Record<string, { label: string; color: string }> = {
-  pending: { label: 'Bekliyor', color: 'bg-warning text-warning-foreground' },
-  sent: { label: 'Gönderildi', color: 'bg-primary text-primary-foreground' },
-  completed: { label: 'Tamamlandı', color: 'bg-success text-success-foreground' },
-  cancelled: { label: 'İptal', color: 'bg-destructive text-destructive-foreground' },
+  pending: { label: 'Pending', color: 'bg-warning text-warning-foreground' },
+  sent: { label: 'Sent', color: 'bg-primary text-primary-foreground' },
+  completed: { label: 'Completed', color: 'bg-success text-success-foreground' },
+  cancelled: { label: 'Cancelled', color: 'bg-destructive text-destructive-foreground' },
 };
 
 export default function Reminders() {
@@ -160,8 +160,8 @@ export default function Reminders() {
     } catch (error) {
       console.error('Error fetching data:', error);
       toast({
-        title: 'Hata',
-        description: 'Veriler yüklenirken hata oluştu',
+        title: 'Error',
+        description: 'Failed to load data',
         variant: 'destructive',
       });
     } finally {
@@ -174,8 +174,8 @@ export default function Reminders() {
     
     if (!form.target_id || !form.reminder_date || !form.title) {
       toast({
-        title: 'Hata',
-        description: 'Lütfen gerekli alanları doldurun',
+        title: 'Error',
+        description: 'Please fill in all required fields',
         variant: 'destructive',
       });
       return;
@@ -201,8 +201,8 @@ export default function Reminders() {
       if (error) throw error;
 
       toast({
-        title: 'Başarılı',
-        description: 'Hatırlatma oluşturuldu',
+        title: 'Success',
+        description: 'Reminder created successfully',
       });
 
       setIsDialogOpen(false);
@@ -220,8 +220,8 @@ export default function Reminders() {
     } catch (error) {
       console.error('Error creating reminder:', error);
       toast({
-        title: 'Hata',
-        description: 'Hatırlatma oluşturulurken hata oluştu',
+        title: 'Error',
+        description: 'Failed to create reminder',
         variant: 'destructive',
       });
     }
@@ -240,15 +240,15 @@ export default function Reminders() {
       if (error) throw error;
 
       toast({
-        title: 'Başarılı',
-        description: 'Hatırlatma tamamlandı olarak işaretlendi',
+        title: 'Success',
+        description: 'Reminder marked as completed',
       });
       fetchData();
     } catch (error) {
       console.error('Error completing reminder:', error);
       toast({
-        title: 'Hata',
-        description: 'İşlem sırasında hata oluştu',
+        title: 'Error',
+        description: 'An error occurred',
         variant: 'destructive',
       });
     }
@@ -266,8 +266,8 @@ export default function Reminders() {
       if (error) throw error;
 
       toast({
-        title: 'Başarılı',
-        description: 'Hatırlatma silindi',
+        title: 'Success',
+        description: 'Reminder deleted',
       });
       setDeleteDialogOpen(false);
       setDeletingId(null);
@@ -275,8 +275,8 @@ export default function Reminders() {
     } catch (error) {
       console.error('Error deleting reminder:', error);
       toast({
-        title: 'Hata',
-        description: 'Silme işlemi sırasında hata oluştu',
+        title: 'Error',
+        description: 'Failed to delete reminder',
         variant: 'destructive',
       });
     }
@@ -328,24 +328,24 @@ export default function Reminders() {
       <div className="space-y-4 md:space-y-6">
         <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-4">
           <div>
-            <h1 className="text-2xl md:text-3xl font-bold text-foreground">Hatırlatmalar</h1>
-            <p className="text-sm md:text-base text-muted-foreground">Hasta ve lead takip sistemi</p>
+            <h1 className="text-2xl md:text-3xl font-bold text-foreground">Reminders</h1>
+            <p className="text-sm md:text-base text-muted-foreground">Patient and lead follow-up system</p>
           </div>
           <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
             <DialogTrigger asChild>
               <Button className="w-full sm:w-auto">
                 <Plus className="w-4 h-4 mr-2" />
-                Yeni Hatırlatma
+                New Reminder
               </Button>
             </DialogTrigger>
             <DialogContent className="max-w-md">
               <DialogHeader>
-                <DialogTitle>Yeni Hatırlatma Oluştur</DialogTitle>
+                <DialogTitle>Create New Reminder</DialogTitle>
               </DialogHeader>
               <form onSubmit={handleCreateReminder} className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label>Kişi Tipi</Label>
+                    <Label>Person Type</Label>
                     <Select 
                       value={form.target_type} 
                       onValueChange={(value: 'patient' | 'lead') => setForm({ ...form, target_type: value, target_id: '' })}
@@ -354,13 +354,13 @@ export default function Reminders() {
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="patient">Hasta</SelectItem>
+                        <SelectItem value="patient">Patient</SelectItem>
                         <SelectItem value="lead">Lead</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
                   <div className="space-y-2">
-                    <Label>Hatırlatma Tipi</Label>
+                    <Label>Reminder Type</Label>
                     <Select 
                       value={form.reminder_type} 
                       onValueChange={(value) => setForm({ ...form, reminder_type: value })}
@@ -378,13 +378,13 @@ export default function Reminders() {
                 </div>
                 
                 <div className="space-y-2">
-                  <Label>Kişi Seç *</Label>
+                  <Label>Select Person *</Label>
                   <Select 
                     value={form.target_id} 
                     onValueChange={(value) => setForm({ ...form, target_id: value })}
                   >
                     <SelectTrigger>
-                      <SelectValue placeholder="Kişi seçin" />
+                      <SelectValue placeholder="Select a person" />
                     </SelectTrigger>
                     <SelectContent>
                       {form.target_type === 'patient' 
@@ -405,7 +405,7 @@ export default function Reminders() {
 
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label>Tarih *</Label>
+                    <Label>Date *</Label>
                     <Input
                       type="date"
                       value={form.reminder_date}
@@ -414,7 +414,7 @@ export default function Reminders() {
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label>Saat</Label>
+                    <Label>Time</Label>
                     <Input
                       type="time"
                       value={form.reminder_time}
@@ -424,11 +424,11 @@ export default function Reminders() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label>Başlık *</Label>
+                  <Label>Title *</Label>
                   <Input
                     value={form.title}
                     onChange={(e) => setForm({ ...form, title: e.target.value })}
-                    placeholder="Hatırlatma başlığı"
+                    placeholder="Reminder title"
                     required
                   />
                 </div>
@@ -484,14 +484,14 @@ export default function Reminders() {
           <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="reminders" className="flex items-center gap-2">
               <Bell className="w-4 h-4" />
-              <span className="hidden sm:inline">Hatırlatmalar</span>
+              <span className="hidden sm:inline">Reminders</span>
               {pendingReminders.length > 0 && (
                 <Badge variant="secondary" className="ml-1">{pendingReminders.length}</Badge>
               )}
             </TabsTrigger>
             <TabsTrigger value="patients" className="flex items-center gap-2">
               <User className="w-4 h-4" />
-              <span className="hidden sm:inline">Hastalar</span>
+              <span className="hidden sm:inline">Patients</span>
             </TabsTrigger>
             <TabsTrigger value="leads" className="flex items-center gap-2">
               <Users className="w-4 h-4" />
@@ -507,7 +507,7 @@ export default function Reminders() {
                   <div className="relative flex-1">
                     <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
                     <Input
-                      placeholder="Ara..."
+                      placeholder="Search..."
                       value={searchTerm}
                       onChange={(e) => setSearchTerm(e.target.value)}
                       className="pl-10"
@@ -515,10 +515,10 @@ export default function Reminders() {
                   </div>
                   <Select value={statusFilter} onValueChange={setStatusFilter}>
                     <SelectTrigger className="w-full md:w-40">
-                      <SelectValue placeholder="Durum" />
+                      <SelectValue placeholder="Status" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="all">Tüm Durumlar</SelectItem>
+                      <SelectItem value="all">All Statuses</SelectItem>
                       {Object.entries(STATUS_LABELS).map(([value, { label }]) => (
                         <SelectItem key={value} value={value}>{label}</SelectItem>
                       ))}
@@ -526,10 +526,10 @@ export default function Reminders() {
                   </Select>
                   <Select value={typeFilter} onValueChange={setTypeFilter}>
                     <SelectTrigger className="w-full md:w-40">
-                      <SelectValue placeholder="Tip" />
+                      <SelectValue placeholder="Type" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="all">Tüm Tipler</SelectItem>
+                      <SelectItem value="all">All Types</SelectItem>
                       {REMINDER_TYPES.map(type => (
                         <SelectItem key={type.value} value={type.value}>{type.label}</SelectItem>
                       ))}
@@ -545,7 +545,7 @@ export default function Reminders() {
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2 text-warning">
                     <Clock className="w-5 h-5" />
-                    Bekleyen Hatırlatmalar ({pendingReminders.length})
+                    Pending Reminders ({pendingReminders.length})
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
@@ -569,7 +569,7 @@ export default function Reminders() {
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
                     <CheckCircle className="w-5 h-5" />
-                    Diğer Hatırlatmalar ({otherReminders.length})
+                    Other Reminders ({otherReminders.length})
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
@@ -591,7 +591,7 @@ export default function Reminders() {
               <Card>
                 <CardContent className="py-12 text-center">
                   <Bell className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
-                  <p className="text-muted-foreground">Henüz hatırlatma bulunmuyor</p>
+                  <p className="text-muted-foreground">No reminders found</p>
                 </CardContent>
               </Card>
             )}
@@ -617,7 +617,7 @@ export default function Reminders() {
                           onClick={() => quickCreateReminder('patient', patient.id, 'call_back')}
                         >
                           <Phone className="w-4 h-4 mr-1" />
-                          <span className="hidden sm:inline">Ara</span>
+                          <span className="hidden sm:inline">Call</span>
                         </Button>
                         <Button 
                           size="sm" 
@@ -625,7 +625,7 @@ export default function Reminders() {
                           onClick={() => quickCreateReminder('patient', patient.id, 'follow_up')}
                         >
                           <Calendar className="w-4 h-4 mr-1" />
-                          <span className="hidden sm:inline">Takip</span>
+                          <span className="hidden sm:inline">Follow Up</span>
                         </Button>
                         <Button 
                           size="sm" 
@@ -633,7 +633,7 @@ export default function Reminders() {
                           onClick={() => quickCreateReminder('patient', patient.id, 'unreachable')}
                         >
                           <PhoneOff className="w-4 h-4 mr-1" />
-                          <span className="hidden sm:inline">Ulaşılamadı</span>
+                          <span className="hidden sm:inline">Unreachable</span>
                         </Button>
                       </div>
                     </div>
@@ -663,7 +663,7 @@ export default function Reminders() {
                           onClick={() => quickCreateReminder('lead', lead.id, 'call_back')}
                         >
                           <Phone className="w-4 h-4 mr-1" />
-                          <span className="hidden sm:inline">Ara</span>
+                          <span className="hidden sm:inline">Call</span>
                         </Button>
                         <Button 
                           size="sm" 
@@ -671,7 +671,7 @@ export default function Reminders() {
                           onClick={() => quickCreateReminder('lead', lead.id, 'follow_up')}
                         >
                           <Calendar className="w-4 h-4 mr-1" />
-                          <span className="hidden sm:inline">Takip</span>
+                          <span className="hidden sm:inline">Follow Up</span>
                         </Button>
                         <Button 
                           size="sm" 
@@ -679,7 +679,7 @@ export default function Reminders() {
                           onClick={() => quickCreateReminder('lead', lead.id, 'unreachable')}
                         >
                           <PhoneOff className="w-4 h-4 mr-1" />
-                          <span className="hidden sm:inline">Ulaşılamadı</span>
+                          <span className="hidden sm:inline">Unreachable</span>
                         </Button>
                       </div>
                     </div>
@@ -694,15 +694,15 @@ export default function Reminders() {
         <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
           <AlertDialogContent>
             <AlertDialogHeader>
-              <AlertDialogTitle>Hatırlatmayı Sil</AlertDialogTitle>
+              <AlertDialogTitle>Delete Reminder</AlertDialogTitle>
               <AlertDialogDescription>
-                Bu hatırlatmayı silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.
+                Are you sure you want to delete this reminder? This action cannot be undone.
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
-              <AlertDialogCancel>İptal</AlertDialogCancel>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
               <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-                Sil
+                Delete
               </AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>
@@ -750,19 +750,19 @@ function ReminderCard({
               {isOverdue && (
                 <Badge variant="destructive" className="flex items-center gap-1">
                   <AlertCircle className="w-3 h-3" />
-                  Gecikmiş
+                  Overdue
                 </Badge>
               )}
             </div>
             <p className="text-sm text-muted-foreground mt-1">
               <span className="font-medium">{targetName}</span>
               <Badge variant="outline" className="ml-2 text-xs">
-                {isPatient ? 'Hasta' : 'Lead'}
+                {isPatient ? 'Patient' : 'Lead'}
               </Badge>
             </p>
             <p className="text-sm text-muted-foreground">{targetPhone}</p>
             <p className="text-xs text-muted-foreground mt-1">
-              {new Date(reminder.reminder_date).toLocaleString('tr-TR', { 
+              {new Date(reminder.reminder_date).toLocaleString('en-US', { 
                 day: '2-digit', 
                 month: '2-digit', 
                 year: 'numeric', 
@@ -780,7 +780,7 @@ function ReminderCard({
           {isPending && (
             <Button size="sm" variant="outline" onClick={onComplete}>
               <CheckCircle className="w-4 h-4 mr-1" />
-              Tamamla
+              Complete
             </Button>
           )}
           <Button size="sm" variant="ghost" onClick={onDelete}>
