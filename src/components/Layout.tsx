@@ -31,6 +31,7 @@ import {
   Hotel,
   DollarSign,
   Menu,
+  Bell,
 } from 'lucide-react';
 import { signOut } from '@/lib/auth';
 import { useToast } from '@/hooks/use-toast';
@@ -71,6 +72,7 @@ export default function Layout({ children }: LayoutProps) {
     { path: '/leads', icon: ClipboardList, label: 'Leads' },
     { path: '/patients', icon: Users, label: 'Patients' },
     { path: '/appointments', icon: Calendar, label: 'Appointments' },
+    { path: '/reminders', icon: Bell, label: 'Reminders' },
   ];
 
   // Add organization management for super admins
