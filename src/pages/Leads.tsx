@@ -29,7 +29,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Plus, Search, Phone, Mail, MapPin } from 'lucide-react';
+import { Plus, Search, Phone, Mail, MapPin, UserPlus } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
 
@@ -75,6 +75,7 @@ export default function Leads() {
   const [searchQuery, setSearchQuery] = useState('');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
+  const [isConverting, setIsConverting] = useState(false);
   const { toast } = useToast();
 
   const [formData, setFormData] = useState({
@@ -243,6 +244,56 @@ export default function Leads() {
     setIsDialogOpen(true);
   };
 
+  const handleConvertToPatient = async (lead: Lead) => {
+    if (isConverting) return;
+    
+    setIsConverting(true);
+    try {
+      // Create patient from lead data
+      const patientData = {
+        first_name: lead.first_name,
+        last_name: lead.last_name,
+        email: lead.email,
+        phone: lead.phone,
+        country: lead.country,
+        organization_id: lead.organization_id,
+        lead_id: lead.id,
+        created_by: profile?.id,
+        notes: lead.notes,
+      };
+
+      const { error: patientError } = await supabase
+        .from('patients')
+        .insert([patientData]);
+
+      if (patientError) throw patientError;
+
+      // Update lead status to converted_to_patient
+      const { error: leadError } = await supabase
+        .from('leads')
+        .update({ status: 'converted_to_patient' })
+        .eq('id', lead.id);
+
+      if (leadError) throw leadError;
+
+      toast({
+        title: "Başarılı",
+        description: `${lead.first_name} ${lead.last_name} hastaya dönüştürüldü`,
+      });
+
+      loadLeads();
+    } catch (error) {
+      console.error('Error converting lead to patient:', error);
+      toast({
+        title: "Hata",
+        description: "Lead hastaya dönüştürülemedi",
+        variant: "destructive",
+      });
+    } finally {
+      setIsConverting(false);
+    }
+  };
+
   const filteredLeads = leads.filter(lead =>
     `${lead.first_name} ${lead.last_name} ${lead.email} ${lead.phone}`
       .toLowerCase()
@@ -335,18 +386,36 @@ export default function Leads() {
                 {isSuperAdmin && (
                   <div className="space-y-2">
                     <Label htmlFor="organization_id">Assign to Organization</Label>
-                    <Select value={formData.organization_id} onValueChange={(value) => setFormData({ ...formData, organization_id: value })}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select organization" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {organizations.map((org) => (
-                          <SelectItem key={org.id} value={org.id}>
-                            {org.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    {selectedLead ? (
+                      <div className="space-y-1">
+                        <Select value={formData.organization_id} disabled>
+                          <SelectTrigger className="opacity-60">
+                            <SelectValue placeholder="Select organization" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {organizations.map((org) => (
+                              <SelectItem key={org.id} value={org.id}>
+                                {org.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <p className="text-xs text-muted-foreground">Lead'in organizasyonu değiştirilemez</p>
+                      </div>
+                    ) : (
+                      <Select value={formData.organization_id} onValueChange={(value) => setFormData({ ...formData, organization_id: value })}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select organization" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {organizations.map((org) => (
+                            <SelectItem key={org.id} value={org.id}>
+                              {org.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    )}
                   </div>
                 )}
 
@@ -517,9 +586,23 @@ export default function Leads() {
                       {format(new Date(lead.created_at), 'MMM dd, yyyy')}
                     </TableCell>
                     <TableCell>
-                      <Button variant="ghost" size="sm">
-                        Edit
-                      </Button>
+                      <div className="flex items-center gap-1">
+                        <Button variant="ghost" size="sm" onClick={(e) => { e.stopPropagation(); handleEdit(lead); }}>
+                          Edit
+                        </Button>
+                        {lead.status !== 'converted_to_patient' && (
+                          <Button 
+                            variant="outline" 
+                            size="sm" 
+                            onClick={(e) => { e.stopPropagation(); handleConvertToPatient(lead); }}
+                            disabled={isConverting}
+                            className="text-xs"
+                          >
+                            <UserPlus className="w-3 h-3 mr-1" />
+                            Hastaya Dönüştür
+                          </Button>
+                        )}
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))
