@@ -277,16 +277,16 @@ export default function Leads() {
       if (leadError) throw leadError;
 
       toast({
-        title: "Başarılı",
-        description: `${lead.first_name} ${lead.last_name} hastaya dönüştürüldü`,
+        title: "Success",
+        description: `${lead.first_name} ${lead.last_name} converted to patient`,
       });
 
       loadLeads();
     } catch (error) {
       console.error('Error converting lead to patient:', error);
       toast({
-        title: "Hata",
-        description: "Lead hastaya dönüştürülemedi",
+        title: "Error",
+        description: "Failed to convert lead to patient",
         variant: "destructive",
       });
     } finally {
@@ -400,7 +400,7 @@ export default function Leads() {
                             ))}
                           </SelectContent>
                         </Select>
-                        <p className="text-xs text-muted-foreground">Lead'in organizasyonu değiştirilemez</p>
+                        <p className="text-xs text-muted-foreground">Organization cannot be changed for existing leads</p>
                       </div>
                     ) : (
                       <Select value={formData.organization_id} onValueChange={(value) => setFormData({ ...formData, organization_id: value })}>
@@ -599,7 +599,7 @@ export default function Leads() {
                             className="text-xs"
                           >
                             <UserPlus className="w-3 h-3 mr-1" />
-                            Hastaya Dönüştür
+                            Convert to Patient
                           </Button>
                         )}
                       </div>
