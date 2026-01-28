@@ -452,7 +452,7 @@ export default function Patients() {
                             {organizations.map(org => <SelectItem key={org.id} value={org.id}>{org.name}</SelectItem>)}
                           </SelectContent>
                         </Select>
-                        <p className="text-xs text-muted-foreground">Lead'den gelen hastaların kliniği değiştirilemez</p>
+                        <p className="text-xs text-muted-foreground">Clinic cannot be changed for patients from leads</p>
                       </div>
                     ) : (
                       <Select value={formData.organization_id} onValueChange={value => setFormData({
