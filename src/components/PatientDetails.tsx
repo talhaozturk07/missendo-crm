@@ -271,7 +271,7 @@ export function PatientDetails({ patientId, onClose }: PatientDetailsProps) {
       const localDate = new Date(`${appointmentForm.appointment_date}T${appointmentForm.appointment_time}:00`);
       const appointmentDateTime = localDate.toISOString();
       
-      const { error } = await supabase.from('appointments').insert([{
+      const { data: appointmentData, error } = await supabase.from('appointments').insert([{
         patient_id: patientId,
         organization_id: profile?.organization_id,
         appointment_date: appointmentDateTime,
@@ -279,9 +279,24 @@ export function PatientDetails({ patientId, onClose }: PatientDetailsProps) {
         notes: appointmentForm.appointment_type ? `${appointmentForm.appointment_type}${appointmentForm.notes ? ': ' + appointmentForm.notes : ''}` : appointmentForm.notes || null,
         status: 'scheduled',
         created_by: profile?.id
-      }]);
+      }]).select().single();
 
       if (error) throw error;
+
+      // Auto-create reminder for the appointment
+      if (appointmentData && profile?.id && profile?.organization_id) {
+        await supabase.from('reminders').insert([{
+          title: `Appointment: ${patientInfo?.first_name} ${patientInfo?.last_name}`,
+          reminder_date: appointmentDateTime,
+          reminder_type: 'appointment',
+          patient_id: patientId,
+          organization_id: profile.organization_id,
+          created_by: profile.id,
+          notes: appointmentForm.appointment_type || 'Scheduled appointment',
+          notify_all_admins: true,
+          status: 'pending'
+        }]);
+      }
 
       toast({
         title: 'Success',
