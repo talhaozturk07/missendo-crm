@@ -2238,29 +2238,29 @@ export function PatientDetails({ patientId, onClose }: PatientDetailsProps) {
                             </div>
                           )}
                         </div>
-                        {/* Hover overlay with actions */}
-                        <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                        {/* Action buttons in top-right corner */}
+                        <div className="absolute top-1 right-1 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity z-10">
                           <Button
                             size="sm"
                             variant="secondary"
-                            className="h-8 w-8 p-0"
+                            className="h-7 w-7 p-0 shadow-md"
                             onClick={(e) => {
                               e.stopPropagation();
                               handleDownloadDocument(doc.file_path, doc.document_name);
                             }}
                           >
-                            <Download className="w-4 h-4" />
+                            <Download className="w-3 h-3" />
                           </Button>
                           <Button
                             size="sm"
                             variant="destructive"
-                            className="h-8 w-8 p-0"
+                            className="h-7 w-7 p-0 shadow-md"
                             onClick={(e) => {
                               e.stopPropagation();
                               openDeleteDialog('document', doc.id, doc.file_path);
                             }}
                           >
-                            <Trash2 className="w-4 h-4" />
+                            <Trash2 className="w-3 h-3" />
                           </Button>
                         </div>
                       </div>
@@ -2304,29 +2304,29 @@ export function PatientDetails({ patientId, onClose }: PatientDetailsProps) {
                             </div>
                           )}
                         </div>
-                        {/* Hover overlay with actions */}
-                        <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                        {/* Action buttons in top-right corner */}
+                        <div className="absolute top-1 right-1 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity z-10">
                           <Button
                             size="sm"
                             variant="secondary"
-                            className="h-8 w-8 p-0"
+                            className="h-7 w-7 p-0 shadow-md"
                             onClick={(e) => {
                               e.stopPropagation();
                               handleDownloadDocument(doc.file_path, doc.document_name);
                             }}
                           >
-                            <Download className="w-4 h-4" />
+                            <Download className="w-3 h-3" />
                           </Button>
                           <Button
                             size="sm"
                             variant="destructive"
-                            className="h-8 w-8 p-0"
+                            className="h-7 w-7 p-0 shadow-md"
                             onClick={(e) => {
                               e.stopPropagation();
                               openDeleteDialog('document', doc.id, doc.file_path);
                             }}
                           >
-                            <Trash2 className="w-4 h-4" />
+                            <Trash2 className="w-3 h-3" />
                           </Button>
                         </div>
                       </div>
