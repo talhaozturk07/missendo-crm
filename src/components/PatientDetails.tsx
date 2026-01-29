@@ -111,6 +111,7 @@ export function PatientDetails({ patientId, onClose }: PatientDetailsProps) {
     final_price: number;
     downpayment: number;
     clinic_payment: number;
+    organization_id?: string;
     first_name?: string;
     last_name?: string;
     email?: string;
@@ -221,7 +222,7 @@ export function PatientDetails({ patientId, onClose }: PatientDetailsProps) {
         supabase.from('patient_notes').select('*, creator:profiles!patient_notes_created_by_fkey(first_name, last_name)').eq('patient_id', patientId).order('note_date', { ascending: false }),
         supabase.from('patient_payments').select('*').eq('patient_id', patientId).order('payment_date', { ascending: false }),
         supabase.from('patient_transfers').select('*, hotels(hotel_name)').eq('patient_id', patientId).order('transfer_datetime', { ascending: false }),
-        supabase.from('patients').select('total_cost, total_paid, estimated_price, final_price, downpayment, clinic_payment, first_name, last_name, email, phone, date_of_birth, gender, country, address, medical_condition, allergies, notes, photo_url, has_companion, companion_first_name, companion_last_name, companion_phone').eq('id', patientId).maybeSingle(),
+        supabase.from('patients').select('organization_id, total_cost, total_paid, estimated_price, final_price, downpayment, clinic_payment, first_name, last_name, email, phone, date_of_birth, gender, country, address, medical_condition, allergies, notes, photo_url, has_companion, companion_first_name, companion_last_name, companion_phone').eq('id', patientId).maybeSingle(),
         supabase.from('hotels').select('*').eq('organization_id', profile?.organization_id),
         supabase.from('transfer_services').select('*').eq('organization_id', profile?.organization_id),
         supabase.from('treatments').select('*').eq('organization_id', profile?.organization_id),
@@ -340,6 +341,16 @@ export function PatientDetails({ patientId, onClose }: PatientDetailsProps) {
   const handleUploadDocuments = async () => {
     if (documentFiles.length === 0) return;
 
+    const patientOrgId = patientInfo?.organization_id;
+    if (!patientOrgId) {
+      toast({
+        title: 'Error',
+        description: 'Patient organization could not be determined. Please refresh and try again.',
+        variant: 'destructive'
+      });
+      return;
+    }
+
     setShowCategoryDialog(false);
     setUploadingDocuments(true);
     let successCount = 0;
@@ -347,9 +358,10 @@ export function PatientDetails({ patientId, onClose }: PatientDetailsProps) {
 
     try {
       for (const file of documentFiles) {
+        let fileName: string | null = null;
         try {
           const fileExt = file.name.split('.').pop();
-          const fileName = `${patientId}/${Date.now()}-${Math.random().toString(36).substr(2, 9)}.${fileExt}`;
+          fileName = `${patientId}/${Date.now()}-${Math.random().toString(36).substr(2, 9)}.${fileExt}`;
 
           const { error: uploadError } = await supabase.storage
             .from('patient-documents')
@@ -359,12 +371,14 @@ export function PatientDetails({ patientId, onClose }: PatientDetailsProps) {
 
           const { error: dbError } = await supabase.from('patient_documents').insert([{
             patient_id: patientId,
-            organization_id: profile?.organization_id,
+            // Always write the document with the patient's organization_id.
+            // This avoids mismatches (e.g., super_admin uploading for another org's patient).
+            organization_id: patientOrgId,
             document_name: file.name,
             document_type: file.type,
             file_path: fileName,
             file_size: file.size,
-            uploaded_by: profile?.id,
+            uploaded_by: profile?.id || null,
             notes: documentNotes || null,
             category: documentCategory
           }]);
@@ -373,6 +387,16 @@ export function PatientDetails({ patientId, onClose }: PatientDetailsProps) {
           successCount++;
         } catch (err) {
           console.error('Error uploading file:', file.name, err);
+
+          // Best-effort cleanup: if the file was uploaded but DB insert failed, remove the orphaned object.
+          if (fileName) {
+            try {
+              await supabase.storage.from('patient-documents').remove([fileName]);
+            } catch {
+              // ignore cleanup errors
+            }
+          }
+
           errorCount++;
         }
       }
@@ -660,13 +684,23 @@ export function PatientDetails({ patientId, onClose }: PatientDetailsProps) {
     e.preventDefault();
     if (!noteForm.content.trim()) return;
 
+    const patientOrgId = patientInfo?.organization_id;
+    if (!patientOrgId) {
+      toast({
+        title: 'Error',
+        description: 'Patient organization could not be determined. Please refresh and try again.',
+        variant: 'destructive'
+      });
+      return;
+    }
+
     try {
       const { error } = await supabase.from('patient_notes').insert([{
         patient_id: patientId,
-        organization_id: profile?.organization_id,
+        organization_id: patientOrgId,
         note_date: noteForm.note_date,
         content: noteForm.content,
-        created_by: profile?.id
+        created_by: profile?.id || null
       }]);
 
       if (error) throw error;
