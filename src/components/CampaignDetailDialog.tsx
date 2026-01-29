@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
@@ -66,7 +66,7 @@ export function CampaignDetailDialog({ campaign, open, onOpenChange, onEdit }: C
   const [activeTab, setActiveTab] = useState("overview");
 
   // Fetch campaign recipients
-  const { data: recipients = [], isLoading: recipientsLoading } = useQuery({
+  const { data: recipients = [], isLoading: recipientsLoading, refetch: refetchRecipients } = useQuery({
     queryKey: ['campaign-recipients-detail', campaign?.id],
     queryFn: async () => {
       if (!campaign) return [];
@@ -80,6 +80,54 @@ export function CampaignDetailDialog({ campaign, open, onOpenChange, onEdit }: C
     },
     enabled: !!campaign && open
   });
+
+  // Subscribe to realtime updates for campaign_recipients
+  useEffect(() => {
+    if (!campaign || !open) return;
+
+    const channel = supabase
+      .channel(`campaign-recipients-${campaign.id}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'campaign_recipients',
+          filter: `campaign_id=eq.${campaign.id}`
+        },
+        (payload) => {
+          console.log('Realtime update for campaign recipients:', payload);
+          // Refetch recipients on any change
+          refetchRecipients();
+          // Also invalidate campaign query to update counts
+          queryClient.invalidateQueries({ queryKey: ['email-campaigns'] });
+        }
+      )
+      .subscribe();
+
+    // Also subscribe to campaign updates
+    const campaignChannel = supabase
+      .channel(`campaign-${campaign.id}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'email_campaigns',
+          filter: `id=eq.${campaign.id}`
+        },
+        (payload) => {
+          console.log('Realtime update for campaign:', payload);
+          queryClient.invalidateQueries({ queryKey: ['email-campaigns'] });
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+      supabase.removeChannel(campaignChannel);
+    };
+  }, [campaign?.id, open, refetchRecipients, queryClient]);
 
   // Resend campaign mutation
   const resendCampaignMutation = useMutation({
