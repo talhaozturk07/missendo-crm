@@ -97,11 +97,13 @@ serve(async (req: Request) => {
     let successCount = 0;
     let failCount = 0;
 
-    // Generate HTML email template
-    const generateEmailHtml = (recipientName: string, content: string) => {
-      // Logo hosted in public folder - accessible via the app's public URL
-      // Using a data URI or external hosting would be more reliable
-      const logoUrl = "https://xzcpxatfzgusrxfreeoi.supabase.co/storage/v1/object/public/avatars/miss-endo-logo.png";
+    // Generate HTML email template with tracking pixel
+    const generateEmailHtml = (recipientId: string, recipientName: string, content: string) => {
+      // Logo hosted in public folder - use the preview/published app URL
+      const logoUrl = "https://id-preview--8ef91ecf-bcb6-494f-a1f9-5e4395cf6f20.lovable.app/miss-endo-logo.webp";
+      
+      // Tracking pixel URL
+      const trackingUrl = `${supabaseUrl}/functions/v1/track-email-open?rid=${recipientId}`;
       
       return `<!DOCTYPE html>
 <html>
@@ -139,6 +141,8 @@ ${content.replace(/\{\{name\}\}/g, recipientName)}
 </td>
 </tr>
 </table>
+<!-- Tracking Pixel -->
+<img src="${trackingUrl}" width="1" height="1" style="display:none;" alt="" />
 </body>
 </html>`;
     };
@@ -152,7 +156,7 @@ ${content.replace(/\{\{name\}\}/g, recipientName)}
         const personalizedSubject = campaign.subject.replace(/\{\{name\}\}/g, recipient.recipient_name || 'Valued Customer');
         const personalizedContent = campaign.content.replace(/\{\{name\}\}/g, recipient.recipient_name || 'Valued Customer');
         
-        const emailHtml = generateEmailHtml(recipient.recipient_name || 'Valued Customer', personalizedContent);
+        const emailHtml = generateEmailHtml(recipient.id, recipient.recipient_name || 'Valued Customer', personalizedContent);
 
         await client.send({
           from: `${fromName} <${fromEmail}>`,
