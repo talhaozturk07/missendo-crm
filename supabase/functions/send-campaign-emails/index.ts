@@ -99,6 +99,9 @@ serve(async (req: Request) => {
 
     // Generate HTML email template
     const generateEmailHtml = (recipientName: string, content: string) => {
+      // Logo hosted in public folder - use the production URL
+      const logoUrl = "https://id-preview--8ef91ecf-bcb6-494f-a1f9-5e4395cf6f20.lovable.app/miss-endo-logo.webp";
+      
       return `<!DOCTYPE html>
 <html>
 <head>
@@ -113,14 +116,14 @@ serve(async (req: Request) => {
 <!-- Header with Logo -->
 <tr>
 <td style="background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%); padding: 30px; text-align: center;">
-<img src="https://xzcpxatfzgusrxfreeoi.supabase.co/storage/v1/object/public/email-assets/miss-endo-logo.webp?v=1" alt="Miss Endo" width="120" style="max-width: 120px; height: auto;">
+<img src="${logoUrl}" alt="Miss Endo" width="180" height="auto" style="max-width: 180px; height: auto; display: block; margin: 0 auto;">
 </td>
 </tr>
 <!-- Content -->
 <tr>
 <td style="padding: 30px;">
 <div style="color: #111827; font-size: 16px; line-height: 1.6;">
-${content.replace(/\{\{name\}\}/g, recipientName).replace(/\n/g, '<br>')}
+${content.replace(/\{\{name\}\}/g, recipientName)}
 </div>
 </td>
 </tr>
