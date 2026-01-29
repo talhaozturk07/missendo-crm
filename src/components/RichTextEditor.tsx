@@ -4,10 +4,11 @@ import Link from '@tiptap/extension-link';
 import Image from '@tiptap/extension-image';
 import Underline from '@tiptap/extension-underline';
 import TextAlign from '@tiptap/extension-text-align';
-import { useEffect, useCallback, useState } from 'react';
+import { useEffect, useCallback, useState, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';
 import { 
   Bold, 
   Italic, 
@@ -26,7 +27,9 @@ import {
   Redo,
   Unlink,
   Code,
-  Eye
+  Eye,
+  Upload,
+  Loader2
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import {
@@ -35,6 +38,8 @@ import {
   PopoverTrigger,
 } from '@/components/ui/popover';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 
 interface RichTextEditorProps {
   content: string;
@@ -49,6 +54,8 @@ export function RichTextEditor({ content, onChange, placeholder, className }: Ri
   const [linkPopoverOpen, setLinkPopoverOpen] = useState(false);
   const [imagePopoverOpen, setImagePopoverOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<'visual' | 'html'>('visual');
+  const [isUploading, setIsUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [htmlContent, setHtmlContent] = useState(content);
 
   const editor = useEditor({
@@ -146,6 +153,68 @@ export function RichTextEditor({ content, onChange, placeholder, className }: Ri
     setImageUrl('');
     setImagePopoverOpen(false);
   }, [editor, imageUrl]);
+
+  const handleImageUpload = useCallback(async (file: File) => {
+    if (!editor) return;
+    
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      toast.error('Lütfen bir görsel dosyası seçin');
+      return;
+    }
+
+    // Validate file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error('Görsel boyutu 5MB\'dan küçük olmalıdır');
+      return;
+    }
+
+    setIsUploading(true);
+
+    try {
+      // Generate unique filename
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
+      const filePath = `campaign-images/${fileName}`;
+
+      // Upload to Supabase storage
+      const { error: uploadError } = await supabase.storage
+        .from('email-assets')
+        .upload(filePath, file, {
+          cacheControl: '3600',
+          upsert: false
+        });
+
+      if (uploadError) {
+        throw uploadError;
+      }
+
+      // Get public URL
+      const { data: { publicUrl } } = supabase.storage
+        .from('email-assets')
+        .getPublicUrl(filePath);
+
+      // Insert image into editor
+      editor.chain().focus().setImage({ src: publicUrl }).run();
+      setImagePopoverOpen(false);
+      toast.success('Görsel başarıyla eklendi');
+    } catch (error: any) {
+      console.error('Image upload error:', error);
+      toast.error('Görsel yüklenirken hata oluştu: ' + (error.message || 'Bilinmeyen hata'));
+    } finally {
+      setIsUploading(false);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    }
+  }, [editor]);
+
+  const handleFileChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      handleImageUpload(file);
+    }
+  }, [handleImageUpload]);
 
   if (!editor) {
     return null;
@@ -366,22 +435,75 @@ export function RichTextEditor({ content, onChange, placeholder, className }: Ri
                   size="sm"
                   className="h-8 w-8 p-0"
                   title="Add Image"
+                  disabled={isUploading}
                 >
-                  <ImageIcon className="h-4 w-4" />
+                  {isUploading ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <ImageIcon className="h-4 w-4" />
+                  )}
                 </Button>
               </PopoverTrigger>
               <PopoverContent className="w-80 p-3" align="start">
-                <div className="space-y-2">
-                  <p className="text-sm font-medium">Insert Image</p>
-                  <p className="text-xs text-muted-foreground">Enter image URL</p>
-                  <div className="flex gap-2">
-                    <Input
-                      placeholder="https://example.com/image.jpg"
-                      value={imageUrl}
-                      onChange={(e) => setImageUrl(e.target.value)}
-                      onKeyDown={(e) => e.key === 'Enter' && addImage()}
+                <div className="space-y-4">
+                  <p className="text-sm font-medium">Görsel Ekle</p>
+                  
+                  {/* File Upload */}
+                  <div className="space-y-2">
+                    <Label className="text-xs text-muted-foreground">Bilgisayardan yükle</Label>
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept="image/*"
+                      onChange={handleFileChange}
+                      className="hidden"
+                      disabled={isUploading}
                     />
-                    <Button size="sm" onClick={addImage}>Add</Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="w-full"
+                      onClick={() => fileInputRef.current?.click()}
+                      disabled={isUploading}
+                    >
+                      {isUploading ? (
+                        <>
+                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                          Yükleniyor...
+                        </>
+                      ) : (
+                        <>
+                          <Upload className="h-4 w-4 mr-2" />
+                          Görsel Seç
+                        </>
+                      )}
+                    </Button>
+                  </div>
+
+                  <div className="relative">
+                    <div className="absolute inset-0 flex items-center">
+                      <span className="w-full border-t" />
+                    </div>
+                    <div className="relative flex justify-center text-xs uppercase">
+                      <span className="bg-popover px-2 text-muted-foreground">veya</span>
+                    </div>
+                  </div>
+
+                  {/* URL Input */}
+                  <div className="space-y-2">
+                    <Label className="text-xs text-muted-foreground">URL ile ekle</Label>
+                    <div className="flex gap-2">
+                      <Input
+                        placeholder="https://example.com/image.jpg"
+                        value={imageUrl}
+                        onChange={(e) => setImageUrl(e.target.value)}
+                        onKeyDown={(e) => e.key === 'Enter' && addImage()}
+                        disabled={isUploading}
+                      />
+                      <Button size="sm" onClick={addImage} disabled={isUploading || !imageUrl}>
+                        Ekle
+                      </Button>
+                    </div>
                   </div>
                 </div>
               </PopoverContent>
