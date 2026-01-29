@@ -50,9 +50,7 @@ interface Organization {
 export default function Patients() {
   const {
     profile,
-    isSuperAdmin,
-    user,
-    loading: authLoading
+    isSuperAdmin
   } = useAuth();
   const isMobile = useIsMobile();
   const [patients, setPatients] = useState<Patient[]>([]);
@@ -96,16 +94,11 @@ export default function Patients() {
   const [isDeleting, setIsDeleting] = useState(false);
   const [isFromLead, setIsFromLead] = useState(false);
   useEffect(() => {
-    // Wait until auth context finishes loading; otherwise we may never trigger the initial fetch
-    // (e.g., profile/roles still null) and the table stays stuck on "Loading...".
-    if (authLoading) return;
-    if (!user) return;
-
     loadPatients();
     if (isSuperAdmin) {
       loadOrganizations();
     }
-  }, [authLoading, user, isSuperAdmin, profile?.organization_id]);
+  }, [profile, isSuperAdmin]);
   const loadOrganizations = async () => {
     try {
       const {
@@ -119,27 +112,13 @@ export default function Patients() {
     }
   };
   const loadPatients = async () => {
-    if (!user) return;
-
-    setLoading(true);
+    if (!profile) return;
     try {
       let query = supabase.from('patients').select('*, organizations(name), patient_treatments(treatments(name)), lead_id').order('created_at', {
         ascending: false
       });
-
-      if (!isSuperAdmin) {
-        const orgId = profile?.organization_id;
-        if (!orgId) {
-          setPatients([]);
-          toast({
-            title: "Error",
-            description: "You must be assigned to an organization",
-            variant: "destructive"
-          });
-          return;
-        }
-
-        query = query.eq('organization_id', orgId);
+      if (!isSuperAdmin && profile.organization_id) {
+        query = query.eq('organization_id', profile.organization_id);
       }
       const {
         data,
