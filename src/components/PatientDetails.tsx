@@ -2220,20 +2220,49 @@ export function PatientDetails({ patientId, onClose }: PatientDetailsProps) {
                     .map(doc => (
                       <div 
                         key={doc.id} 
-                        className="group relative aspect-square rounded-lg overflow-hidden border bg-muted cursor-pointer hover:ring-2 hover:ring-primary transition-all"
-                        onClick={() => handleViewDocument(doc.file_path, doc.document_name, doc.document_type)}
+                        className="group relative aspect-square rounded-lg overflow-hidden border bg-muted"
                       >
-                        {documentThumbnails[doc.id] ? (
-                          <img
-                            src={documentThumbnails[doc.id]}
-                            alt={doc.document_name}
-                            className="w-full h-full object-cover"
-                          />
-                        ) : (
-                          <div className="w-full h-full flex items-center justify-center">
-                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary"></div>
-                          </div>
-                        )}
+                        <div 
+                          className="w-full h-full cursor-pointer"
+                          onClick={() => handleViewDocument(doc.file_path, doc.document_name, doc.document_type)}
+                        >
+                          {documentThumbnails[doc.id] ? (
+                            <img
+                              src={documentThumbnails[doc.id]}
+                              alt={doc.document_name}
+                              className="w-full h-full object-cover"
+                            />
+                          ) : (
+                            <div className="w-full h-full flex items-center justify-center">
+                              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary"></div>
+                            </div>
+                          )}
+                        </div>
+                        {/* Hover overlay with actions */}
+                        <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                          <Button
+                            size="sm"
+                            variant="secondary"
+                            className="h-8 w-8 p-0"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleDownloadDocument(doc.file_path, doc.document_name);
+                            }}
+                          >
+                            <Download className="w-4 h-4" />
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="destructive"
+                            className="h-8 w-8 p-0"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              openDeleteDialog('document', doc.id, doc.file_path);
+                            }}
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        </div>
                       </div>
                     ))}
                 </div>
@@ -2257,20 +2286,49 @@ export function PatientDetails({ patientId, onClose }: PatientDetailsProps) {
                     .map(doc => (
                       <div 
                         key={doc.id} 
-                        className="group relative aspect-square rounded-lg overflow-hidden border bg-muted cursor-pointer hover:ring-2 hover:ring-primary transition-all"
-                        onClick={() => handleViewDocument(doc.file_path, doc.document_name, doc.document_type)}
+                        className="group relative aspect-square rounded-lg overflow-hidden border bg-muted"
                       >
-                        {documentThumbnails[doc.id] ? (
-                          <img
-                            src={documentThumbnails[doc.id]}
-                            alt={doc.document_name}
-                            className="w-full h-full object-cover"
-                          />
-                        ) : (
-                          <div className="w-full h-full flex items-center justify-center">
-                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary"></div>
-                          </div>
-                        )}
+                        <div 
+                          className="w-full h-full cursor-pointer"
+                          onClick={() => handleViewDocument(doc.file_path, doc.document_name, doc.document_type)}
+                        >
+                          {documentThumbnails[doc.id] ? (
+                            <img
+                              src={documentThumbnails[doc.id]}
+                              alt={doc.document_name}
+                              className="w-full h-full object-cover"
+                            />
+                          ) : (
+                            <div className="w-full h-full flex items-center justify-center">
+                              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary"></div>
+                            </div>
+                          )}
+                        </div>
+                        {/* Hover overlay with actions */}
+                        <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                          <Button
+                            size="sm"
+                            variant="secondary"
+                            className="h-8 w-8 p-0"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleDownloadDocument(doc.file_path, doc.document_name);
+                            }}
+                          >
+                            <Download className="w-4 h-4" />
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="destructive"
+                            className="h-8 w-8 p-0"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              openDeleteDialog('document', doc.id, doc.file_path);
+                            }}
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        </div>
                       </div>
                     ))}
                 </div>
