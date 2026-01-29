@@ -82,9 +82,10 @@ interface Recipient {
   id: string;
   email: string;
   name: string;
-  type: 'lead' | 'patient';
+  type: 'lead' | 'patient' | 'user';
   organization_name?: string;
   status?: string;
+  role?: string;
 }
 
 export default function Mailing() {
@@ -132,6 +133,10 @@ export default function Mailing() {
   const [selectedOrganizationId, setSelectedOrganizationId] = useState<string>("");
   const [selectedGroupId, setSelectedGroupId] = useState<string>("");
   const [selectedLeadStatus, setSelectedLeadStatus] = useState<string>("");
+  
+  // Edit Campaign Dialog
+  const [editCampaignDialogOpen, setEditCampaignDialogOpen] = useState(false);
+  const [editingCampaign, setEditingCampaign] = useState<EmailCampaign | null>(null);
 
   // Queries
   const { data: templates = [], isLoading: templatesLoading } = useQuery({
@@ -260,6 +265,38 @@ export default function Mailing() {
       if (error) throw error;
       return data;
     }
+  });
+
+  // Query for system users (only for super admins)
+  const { data: systemUsers = [] } = useQuery({
+    queryKey: ['users-for-mailing'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('id, first_name, last_name, email, is_active, organization:organizations(name)')
+        .eq('is_active', true)
+        .not('email', 'is', null)
+        .neq('email', '')
+        .order('created_at', { ascending: false });
+      if (error) throw error;
+      return data;
+    },
+    enabled: isSuperAdmin
+  });
+
+  // Query for campaign recipients when editing
+  const { data: campaignRecipients = [] } = useQuery({
+    queryKey: ['campaign-recipients', editingCampaign?.id],
+    queryFn: async () => {
+      if (!editingCampaign) return [];
+      const { data, error } = await supabase
+        .from('campaign_recipients')
+        .select('*')
+        .eq('campaign_id', editingCampaign.id);
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!editingCampaign
   });
 
   // Mutations
@@ -433,6 +470,55 @@ export default function Mailing() {
     }
   });
 
+  // Update campaign recipients mutation
+  const updateCampaignRecipientsMutation = useMutation({
+    mutationFn: async ({ campaignId, recipients }: { campaignId: string; recipients: Recipient[] }) => {
+      // Delete existing recipients
+      const { error: deleteError } = await supabase
+        .from('campaign_recipients')
+        .delete()
+        .eq('campaign_id', campaignId);
+      
+      if (deleteError) throw deleteError;
+
+      // Insert new recipients
+      if (recipients.length > 0) {
+        const recipientData = recipients.map(r => ({
+          campaign_id: campaignId,
+          email: r.email,
+          recipient_name: r.name,
+          recipient_type: r.type,
+          recipient_id: r.id
+        }));
+
+        const { error: insertError } = await supabase
+          .from('campaign_recipients')
+          .insert(recipientData);
+        
+        if (insertError) throw insertError;
+      }
+
+      // Update campaign total_recipients count
+      const { error: updateError } = await supabase
+        .from('email_campaigns')
+        .update({ total_recipients: recipients.length })
+        .eq('id', campaignId);
+      
+      if (updateError) throw updateError;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['email-campaigns'] });
+      queryClient.invalidateQueries({ queryKey: ['campaign-recipients'] });
+      setEditCampaignDialogOpen(false);
+      setEditingCampaign(null);
+      setSelectedRecipients([]);
+      toast({ title: "Campaign recipients updated successfully" });
+    },
+    onError: (error: any) => {
+      toast({ title: "Error updating recipients", description: error.message, variant: "destructive" });
+    }
+  });
+
   // Form helpers
   const resetTemplateForm = () => {
     setTemplateForm({ name: "", subject: "", content: "", html_content: "" });
@@ -531,6 +617,40 @@ export default function Mailing() {
       return [...prev, ...newRecipients];
     });
   };
+
+  const selectAllUsers = () => {
+    const usersAsRecipients: Recipient[] = systemUsers.map((u: any) => ({
+      id: u.id,
+      email: u.email,
+      name: `${u.first_name} ${u.last_name}`,
+      type: 'user' as const,
+      organization_name: u.organization?.name
+    }));
+    setSelectedRecipients(prev => {
+      const newRecipients = usersAsRecipients.filter(ur => 
+        !prev.find(p => p.id === ur.id && p.type === 'user')
+      );
+      return [...prev, ...newRecipients];
+    });
+  };
+
+  const openEditCampaign = async (campaign: EmailCampaign) => {
+    setEditingCampaign(campaign);
+    setEditCampaignDialogOpen(true);
+  };
+
+  // Load recipients when editing campaign opens
+  useEffect(() => {
+    if (editingCampaign && campaignRecipients.length > 0) {
+      const recipients: Recipient[] = campaignRecipients.map((r: any) => ({
+        id: r.recipient_id || r.id,
+        email: r.email,
+        name: r.recipient_name || 'Unknown',
+        type: r.recipient_type as 'lead' | 'patient' | 'user'
+      }));
+      setSelectedRecipients(recipients);
+    }
+  }, [editingCampaign, campaignRecipients]);
 
   const useTemplate = (template: EmailTemplate) => {
     setCampaignForm(prev => ({
@@ -688,15 +808,26 @@ export default function Mailing() {
                             </div>
                             <div className="flex items-center gap-2">
                               {campaign.status === 'draft' && (
-                                <Button 
-                                  size="sm" 
-                                  onClick={() => sendCampaignMutation.mutate(campaign.id)}
-                                  disabled={sendCampaignMutation.isPending}
-                                  className="gap-1"
-                                >
-                                  <Send className="h-3 w-3" />
-                                  Send
-                                </Button>
+                                <>
+                                  <Button 
+                                    size="sm" 
+                                    variant="outline"
+                                    onClick={() => openEditCampaign(campaign)}
+                                    className="gap-1"
+                                  >
+                                    <Edit className="h-3 w-3" />
+                                    Edit
+                                  </Button>
+                                  <Button 
+                                    size="sm" 
+                                    onClick={() => sendCampaignMutation.mutate(campaign.id)}
+                                    disabled={sendCampaignMutation.isPending}
+                                    className="gap-1"
+                                  >
+                                    <Send className="h-3 w-3" />
+                                    Send
+                                  </Button>
+                                </>
                               )}
                               <Button size="sm" variant="outline">
                                 <Eye className="h-4 w-4" />
@@ -1213,13 +1344,18 @@ export default function Mailing() {
                 </div>
 
                 {/* Quick actions */}
-                <div className="flex items-center gap-2">
+                <div className="flex flex-wrap items-center gap-2">
                   <Button size="sm" variant="outline" onClick={selectAllLeads}>
                     Select All Leads ({leads.length})
                   </Button>
                   <Button size="sm" variant="outline" onClick={selectAllPatients}>
                     Select All Patients ({patients.length})
                   </Button>
+                  {isSuperAdmin && (
+                    <Button size="sm" variant="outline" onClick={selectAllUsers}>
+                      Select All Users ({systemUsers.length})
+                    </Button>
+                  )}
                   <Button size="sm" variant="ghost" onClick={() => setSelectedRecipients([])}>
                     Clear Selection
                   </Button>
@@ -1231,7 +1367,7 @@ export default function Mailing() {
                 </div>
 
                 {/* Recipients lists */}
-                <div className="grid md:grid-cols-2 gap-4">
+                <div className={`grid gap-4 ${isSuperAdmin ? 'md:grid-cols-3' : 'md:grid-cols-2'}`}>
                   {/* Leads */}
                   <Card>
                     <CardHeader className="pb-2">
@@ -1326,6 +1462,56 @@ export default function Mailing() {
                       </ScrollArea>
                     </CardContent>
                   </Card>
+
+                  {/* Users (Super Admin only) */}
+                  {isSuperAdmin && (
+                    <Card>
+                      <CardHeader className="pb-2">
+                        <CardTitle className="text-sm flex items-center gap-2">
+                          <Building2 className="h-4 w-4" />
+                          System Users ({systemUsers.length})
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <ScrollArea className="h-[300px]">
+                          <div className="space-y-2">
+                            {systemUsers.map((user: any) => (
+                              <div 
+                                key={user.id}
+                                className={`flex items-center gap-3 p-2 rounded-lg cursor-pointer transition-colors ${
+                                  selectedRecipients.find(r => r.id === user.id && r.type === 'user')
+                                    ? 'bg-primary/10 border border-primary/20'
+                                    : 'hover:bg-muted'
+                                }`}
+                                onClick={() => toggleRecipient({
+                                  id: user.id,
+                                  email: user.email,
+                                  name: `${user.first_name} ${user.last_name}`,
+                                  type: 'user',
+                                  organization_name: user.organization?.name
+                                })}
+                              >
+                                <Checkbox 
+                                  checked={!!selectedRecipients.find(r => r.id === user.id && r.type === 'user')}
+                                />
+                                <div className="flex-1 min-w-0">
+                                  <p className="font-medium text-sm truncate">
+                                    {user.first_name} {user.last_name}
+                                  </p>
+                                  <p className="text-xs text-muted-foreground truncate">{user.email}</p>
+                                </div>
+                                {user.organization?.name && (
+                                  <Badge variant="outline" className="text-xs">
+                                    {user.organization.name}
+                                  </Badge>
+                                )}
+                              </div>
+                            ))}
+                          </div>
+                        </ScrollArea>
+                      </CardContent>
+                    </Card>
+                  )}
                 </div>
               </div>
             )}
@@ -1412,6 +1598,220 @@ export default function Mailing() {
                   Create Campaign
                 </Button>
               )}
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Edit Campaign Recipients Dialog */}
+        <Dialog open={editCampaignDialogOpen} onOpenChange={(open) => {
+          setEditCampaignDialogOpen(open);
+          if (!open) {
+            setEditingCampaign(null);
+            setSelectedRecipients([]);
+          }
+        }}>
+          <DialogContent className="max-w-4xl max-h-[85vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>Edit Campaign Recipients</DialogTitle>
+              <DialogDescription>
+                {editingCampaign?.name} - Update the recipients for this campaign
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="space-y-4">
+              {/* Quick actions */}
+              <div className="flex flex-wrap items-center gap-2">
+                <Button size="sm" variant="outline" onClick={selectAllLeads}>
+                  Select All Leads ({leads.length})
+                </Button>
+                <Button size="sm" variant="outline" onClick={selectAllPatients}>
+                  Select All Patients ({patients.length})
+                </Button>
+                {isSuperAdmin && (
+                  <Button size="sm" variant="outline" onClick={selectAllUsers}>
+                    Select All Users ({systemUsers.length})
+                  </Button>
+                )}
+                <Button size="sm" variant="ghost" onClick={() => setSelectedRecipients([])}>
+                  Clear Selection
+                </Button>
+              </div>
+
+              {/* Selected count */}
+              <div className="bg-muted p-3 rounded-lg">
+                <p className="font-medium">{selectedRecipients.length} recipients selected</p>
+              </div>
+
+              {/* Recipients lists */}
+              <div className={`grid gap-4 ${isSuperAdmin ? 'md:grid-cols-3' : 'md:grid-cols-2'}`}>
+                {/* Leads */}
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm flex items-center gap-2">
+                      <UserCheck className="h-4 w-4" />
+                      Leads ({leads.length})
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <ScrollArea className="h-[300px]">
+                      <div className="space-y-2">
+                        {leads.map((lead: any) => (
+                          <div 
+                            key={lead.id}
+                            className={`flex items-center gap-3 p-2 rounded-lg cursor-pointer transition-colors ${
+                              selectedRecipients.find(r => r.id === lead.id && r.type === 'lead')
+                                ? 'bg-primary/10 border border-primary/20'
+                                : 'hover:bg-muted'
+                            }`}
+                            onClick={() => toggleRecipient({
+                              id: lead.id,
+                              email: lead.email,
+                              name: `${lead.first_name} ${lead.last_name}`,
+                              type: 'lead',
+                              organization_name: lead.organization?.name,
+                              status: lead.status
+                            })}
+                          >
+                            <Checkbox 
+                              checked={!!selectedRecipients.find(r => r.id === lead.id && r.type === 'lead')}
+                            />
+                            <div className="flex-1 min-w-0">
+                              <p className="font-medium text-sm truncate">
+                                {lead.first_name} {lead.last_name}
+                              </p>
+                              <p className="text-xs text-muted-foreground truncate">{lead.email}</p>
+                            </div>
+                            <Badge className={`text-xs ${getLeadStatusColor(lead.status)}`}>
+                              {lead.status}
+                            </Badge>
+                          </div>
+                        ))}
+                      </div>
+                    </ScrollArea>
+                  </CardContent>
+                </Card>
+
+                {/* Patients */}
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm flex items-center gap-2">
+                      <Users className="h-4 w-4" />
+                      Patients ({patients.length})
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <ScrollArea className="h-[300px]">
+                      <div className="space-y-2">
+                        {patients.map((patient: any) => (
+                          <div 
+                            key={patient.id}
+                            className={`flex items-center gap-3 p-2 rounded-lg cursor-pointer transition-colors ${
+                              selectedRecipients.find(r => r.id === patient.id && r.type === 'patient')
+                                ? 'bg-primary/10 border border-primary/20'
+                                : 'hover:bg-muted'
+                            }`}
+                            onClick={() => toggleRecipient({
+                              id: patient.id,
+                              email: patient.email,
+                              name: `${patient.first_name} ${patient.last_name}`,
+                              type: 'patient',
+                              organization_name: patient.organization?.name
+                            })}
+                          >
+                            <Checkbox 
+                              checked={!!selectedRecipients.find(r => r.id === patient.id && r.type === 'patient')}
+                            />
+                            <div className="flex-1 min-w-0">
+                              <p className="font-medium text-sm truncate">
+                                {patient.first_name} {patient.last_name}
+                              </p>
+                              <p className="text-xs text-muted-foreground truncate">{patient.email}</p>
+                            </div>
+                            {isSuperAdmin && patient.organization?.name && (
+                              <Badge variant="outline" className="text-xs">
+                                {patient.organization.name}
+                              </Badge>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    </ScrollArea>
+                  </CardContent>
+                </Card>
+
+                {/* Users (Super Admin only) */}
+                {isSuperAdmin && (
+                  <Card>
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-sm flex items-center gap-2">
+                        <Building2 className="h-4 w-4" />
+                        System Users ({systemUsers.length})
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <ScrollArea className="h-[300px]">
+                        <div className="space-y-2">
+                          {systemUsers.map((sysUser: any) => (
+                            <div 
+                              key={sysUser.id}
+                              className={`flex items-center gap-3 p-2 rounded-lg cursor-pointer transition-colors ${
+                                selectedRecipients.find(r => r.id === sysUser.id && r.type === 'user')
+                                  ? 'bg-primary/10 border border-primary/20'
+                                  : 'hover:bg-muted'
+                              }`}
+                              onClick={() => toggleRecipient({
+                                id: sysUser.id,
+                                email: sysUser.email,
+                                name: `${sysUser.first_name} ${sysUser.last_name}`,
+                                type: 'user',
+                                organization_name: sysUser.organization?.name
+                              })}
+                            >
+                              <Checkbox 
+                                checked={!!selectedRecipients.find(r => r.id === sysUser.id && r.type === 'user')}
+                              />
+                              <div className="flex-1 min-w-0">
+                                <p className="font-medium text-sm truncate">
+                                  {sysUser.first_name} {sysUser.last_name}
+                                </p>
+                                <p className="text-xs text-muted-foreground truncate">{sysUser.email}</p>
+                              </div>
+                              {sysUser.organization?.name && (
+                                <Badge variant="outline" className="text-xs">
+                                  {sysUser.organization.name}
+                                </Badge>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      </ScrollArea>
+                    </CardContent>
+                  </Card>
+                )}
+              </div>
+            </div>
+
+            <DialogFooter>
+              <Button variant="outline" onClick={() => {
+                setEditCampaignDialogOpen(false);
+                setEditingCampaign(null);
+                setSelectedRecipients([]);
+              }}>
+                Cancel
+              </Button>
+              <Button 
+                onClick={() => {
+                  if (editingCampaign) {
+                    updateCampaignRecipientsMutation.mutate({
+                      campaignId: editingCampaign.id,
+                      recipients: selectedRecipients
+                    });
+                  }
+                }}
+                disabled={updateCampaignRecipientsMutation.isPending || selectedRecipients.length === 0}
+              >
+                Update Recipients
+              </Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>
