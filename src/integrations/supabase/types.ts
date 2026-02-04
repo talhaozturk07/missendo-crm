@@ -1210,6 +1210,7 @@ export type Database = {
           country: string | null
           created_at: string | null
           created_by: string | null
+          crm_status: Database["public"]["Enums"]["crm_status"] | null
           date_of_birth: string | null
           downpayment: number | null
           email: string | null
@@ -1241,6 +1242,7 @@ export type Database = {
           country?: string | null
           created_at?: string | null
           created_by?: string | null
+          crm_status?: Database["public"]["Enums"]["crm_status"] | null
           date_of_birth?: string | null
           downpayment?: number | null
           email?: string | null
@@ -1272,6 +1274,7 @@ export type Database = {
           country?: string | null
           created_at?: string | null
           created_by?: string | null
+          crm_status?: Database["public"]["Enums"]["crm_status"] | null
           date_of_birth?: string | null
           downpayment?: number | null
           email?: string | null
@@ -1707,6 +1710,16 @@ export type Database = {
         | "completed"
         | "cancelled"
         | "no_show"
+      crm_status:
+        | "new_lead"
+        | "called_answered"
+        | "called_no_answer"
+        | "photos_received"
+        | "treatment_plan_sent"
+        | "follow_up"
+        | "confirmed"
+        | "completed"
+        | "lost"
       discount_type: "percentage" | "fixed_amount"
       lead_status:
         | "new"
@@ -1851,6 +1864,17 @@ export const Constants = {
         "completed",
         "cancelled",
         "no_show",
+      ],
+      crm_status: [
+        "new_lead",
+        "called_answered",
+        "called_no_answer",
+        "photos_received",
+        "treatment_plan_sent",
+        "follow_up",
+        "confirmed",
+        "completed",
+        "lost",
       ],
       discount_type: ["percentage", "fixed_amount"],
       lead_status: [
