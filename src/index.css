@@ -78,43 +78,159 @@ All colors MUST be HSL.
     --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   }
 
-  .dark {
-    --background: 215 25% 12%;
+  /* Dark Theme (also used for .dark class) */
+  .dark,
+  .theme-dark {
+    --background: 220 20% 10%;
     --foreground: 210 20% 98%;
 
-    --card: 215 25% 15%;
+    --card: 220 20% 13%;
     --card-foreground: 210 20% 98%;
 
-    --popover: 215 25% 15%;
+    --popover: 220 20% 13%;
     --popover-foreground: 210 20% 98%;
 
     --primary: 210 100% 55%;
     --primary-foreground: 0 0% 100%;
+    --primary-light: 210 95% 65%;
+    --primary-dark: 210 100% 45%;
 
-    --secondary: 180 40% 20%;
-    --secondary-foreground: 180 70% 85%;
+    --secondary: 220 15% 20%;
+    --secondary-foreground: 210 20% 90%;
 
-    --muted: 215 25% 20%;
-    --muted-foreground: 215 15% 65%;
+    --muted: 220 15% 18%;
+    --muted-foreground: 215 15% 60%;
 
     --accent: 180 70% 45%;
     --accent-foreground: 0 0% 100%;
 
-    --destructive: 0 62.8% 45%;
+    --success: 145 65% 40%;
+    --success-foreground: 0 0% 100%;
+    
+    --warning: 38 92% 50%;
+    --warning-foreground: 0 0% 100%;
+    
+    --destructive: 0 62% 45%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 215 25% 25%;
-    --input: 215 25% 20%;
+    --info: 210 100% 55%;
+    --info-foreground: 0 0% 100%;
+
+    --border: 220 15% 22%;
+    --input: 220 15% 18%;
     --ring: 210 100% 55%;
 
-    --sidebar-background: 215 25% 10%;
+    --sidebar-background: 220 20% 8%;
     --sidebar-foreground: 210 20% 95%;
     --sidebar-primary: 210 100% 55%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 215 25% 18%;
+    --sidebar-accent: 220 15% 15%;
     --sidebar-accent-foreground: 210 20% 95%;
-    --sidebar-border: 215 25% 18%;
+    --sidebar-border: 220 15% 18%;
     --sidebar-ring: 210 100% 60%;
+  }
+
+  /* Rainbow Theme */
+  .theme-rainbow {
+    --background: 45 30% 97%;
+    --foreground: 0 0% 15%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 0 0% 15%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 0 0% 15%;
+
+    --primary: 200 80% 50%;
+    --primary-foreground: 0 0% 100%;
+    --primary-light: 200 75% 60%;
+    --primary-dark: 200 85% 40%;
+
+    --secondary: 45 90% 95%;
+    --secondary-foreground: 45 80% 30%;
+
+    --muted: 280 20% 95%;
+    --muted-foreground: 280 10% 40%;
+
+    --accent: 320 70% 55%;
+    --accent-foreground: 0 0% 100%;
+
+    --success: 120 60% 45%;
+    --success-foreground: 0 0% 100%;
+    
+    --warning: 45 90% 50%;
+    --warning-foreground: 0 0% 15%;
+    
+    --destructive: 0 80% 55%;
+    --destructive-foreground: 0 0% 100%;
+
+    --info: 200 80% 50%;
+    --info-foreground: 0 0% 100%;
+
+    --border: 280 20% 88%;
+    --input: 45 20% 92%;
+    --ring: 200 80% 50%;
+
+    --sidebar-background: linear-gradient(180deg, hsl(0 70% 45%), hsl(45 80% 50%), hsl(120 50% 40%), hsl(200 70% 45%), hsl(280 60% 50%));
+    --sidebar-background: 280 50% 25%;
+    --sidebar-foreground: 0 0% 98%;
+    --sidebar-primary: 45 90% 55%;
+    --sidebar-primary-foreground: 0 0% 15%;
+    --sidebar-accent: 280 50% 35%;
+    --sidebar-accent-foreground: 0 0% 98%;
+    --sidebar-border: 280 40% 35%;
+    --sidebar-ring: 45 90% 55%;
+  }
+
+  /* Miss Endo Theme (Purple-focused) */
+  .theme-missendo {
+    --background: 270 30% 98%;
+    --foreground: 270 40% 15%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 270 40% 15%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 270 40% 15%;
+
+    --primary: 270 70% 50%;
+    --primary-foreground: 0 0% 100%;
+    --primary-light: 270 65% 60%;
+    --primary-dark: 270 75% 40%;
+
+    --secondary: 280 50% 95%;
+    --secondary-foreground: 280 60% 30%;
+
+    --muted: 270 20% 94%;
+    --muted-foreground: 270 15% 45%;
+
+    --accent: 300 65% 55%;
+    --accent-foreground: 0 0% 100%;
+
+    --success: 145 65% 45%;
+    --success-foreground: 0 0% 100%;
+    
+    --warning: 38 92% 50%;
+    --warning-foreground: 0 0% 100%;
+    
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 0 0% 100%;
+
+    --info: 270 70% 55%;
+    --info-foreground: 0 0% 100%;
+
+    --border: 270 25% 88%;
+    --input: 270 20% 92%;
+    --ring: 270 70% 50%;
+
+    --sidebar-background: 270 50% 20%;
+    --sidebar-foreground: 270 20% 98%;
+    --sidebar-primary: 280 65% 60%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 270 45% 28%;
+    --sidebar-accent-foreground: 270 20% 98%;
+    --sidebar-border: 270 40% 28%;
+    --sidebar-ring: 280 65% 65%;
   }
 }
 
