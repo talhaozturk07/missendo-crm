@@ -20,6 +20,20 @@ import { PatientDetails } from '@/components/PatientDetails';
 import { ColumnFilter } from '@/components/ColumnFilter';
 import { PatientCard } from '@/components/PatientCard';
 import { useIsMobile } from '@/hooks/use-mobile';
+type CrmStatus = 'new_lead' | 'called_answered' | 'called_no_answer' | 'photos_received' | 'treatment_plan_sent' | 'follow_up' | 'confirmed' | 'completed' | 'lost';
+
+const CRM_STATUS_CONFIG: Record<CrmStatus, { label: string; color: string; bgColor: string }> = {
+  new_lead: { label: 'New Lead', color: 'text-slate-600', bgColor: 'bg-white border border-slate-300' },
+  called_answered: { label: 'Answered - Waiting Photos', color: 'text-blue-700', bgColor: 'bg-blue-100' },
+  called_no_answer: { label: 'No Answer - Call Back', color: 'text-yellow-700', bgColor: 'bg-yellow-100' },
+  photos_received: { label: 'Case Under Review', color: 'text-purple-700', bgColor: 'bg-purple-100' },
+  treatment_plan_sent: { label: 'Treatment Plan Sent', color: 'text-orange-700', bgColor: 'bg-orange-100' },
+  follow_up: { label: 'Follow-up - Pending', color: 'text-amber-700', bgColor: 'bg-amber-100' },
+  confirmed: { label: 'Confirmed - Deposit', color: 'text-green-700', bgColor: 'bg-green-100' },
+  completed: { label: 'Completed', color: 'text-emerald-800', bgColor: 'bg-emerald-200' },
+  lost: { label: 'Lost / Closed', color: 'text-red-700', bgColor: 'bg-red-100' },
+};
+
 interface Patient {
   id: string;
   first_name: string;
@@ -34,6 +48,7 @@ interface Patient {
   created_at: string;
   organization_id: string;
   lead_id: string | null;
+  crm_status: CrmStatus | null;
   organizations?: {
     name: string;
   } | null;
@@ -123,7 +138,7 @@ export default function Patients() {
 
     setLoading(true);
     try {
-      let query = supabase.from('patients').select('*, organizations(name), patient_treatments(treatments(name)), lead_id').order('created_at', {
+      let query = supabase.from('patients').select('*, organizations(name), patient_treatments(treatments(name)), lead_id, crm_status').order('created_at', {
         ascending: false
       });
 
@@ -373,7 +388,34 @@ export default function Patients() {
     }
   };
 
-  // Extract unique clinics and countries for filters
+  const handleCrmStatusChange = async (patientId: string, newStatus: CrmStatus) => {
+    try {
+      const { error } = await supabase
+        .from('patients')
+        .update({ crm_status: newStatus })
+        .eq('id', patientId);
+
+      if (error) throw error;
+
+      // Update local state
+      setPatients(prev => prev.map(p => 
+        p.id === patientId ? { ...p, crm_status: newStatus } : p
+      ));
+
+      toast({
+        title: "Success",
+        description: "CRM status updated"
+      });
+    } catch (error) {
+      console.error('Error updating CRM status:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update CRM status",
+        variant: "destructive"
+      });
+    }
+  };
+
   const clinicOptions = useMemo(() => {
     const uniqueClinics = new Map<string, string>();
     patients.forEach(p => {
@@ -729,6 +771,7 @@ export default function Patients() {
                     setShowPatientDetails(true);
                   }}
                   onDelete={() => handleDeleteClick(patient)}
+                  onCrmStatusChange={handleCrmStatusChange}
                 />
               ))
             )}
@@ -741,6 +784,7 @@ export default function Patients() {
                 <TableRow>
                   <TableHead>Patient</TableHead>
                   <TableHead>Contact</TableHead>
+                  <TableHead>CRM Status</TableHead>
                   {isSuperAdmin && (
                     <TableHead className="p-0">
                       <ColumnFilter
@@ -756,11 +800,11 @@ export default function Patients() {
               </TableHeader>
               <TableBody>
                 {loading ? <TableRow>
-                    <TableCell colSpan={isSuperAdmin ? 4 : 3} className="text-center py-8">
+                    <TableCell colSpan={isSuperAdmin ? 5 : 4} className="text-center py-8">
                       Loading patients...
                     </TableCell>
                   </TableRow> : filteredPatients.length === 0 ? <TableRow>
-                    <TableCell colSpan={isSuperAdmin ? 4 : 3} className="text-center py-8 text-muted-foreground">
+                    <TableCell colSpan={isSuperAdmin ? 5 : 4} className="text-center py-8 text-muted-foreground">
                       No patients found
                     </TableCell>
                   </TableRow> : filteredPatients.map(patient => <TableRow key={patient.id} className="cursor-pointer hover:bg-muted/50">
@@ -789,6 +833,23 @@ export default function Patients() {
                             <span className="text-muted-foreground">{patient.phone}</span>
                           </div>
                         </div>
+                      </TableCell>
+                      <TableCell onClick={(e) => e.stopPropagation()}>
+                        <Select
+                          value={patient.crm_status || 'new_lead'}
+                          onValueChange={(value) => handleCrmStatusChange(patient.id, value as CrmStatus)}
+                        >
+                          <SelectTrigger className={`w-44 h-8 text-xs ${CRM_STATUS_CONFIG[patient.crm_status || 'new_lead'].bgColor} ${CRM_STATUS_CONFIG[patient.crm_status || 'new_lead'].color} border-0`}>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {Object.entries(CRM_STATUS_CONFIG).map(([key, config]) => (
+                              <SelectItem key={key} value={key}>
+                                <span className={`${config.color}`}>{config.label}</span>
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
                       </TableCell>
                       {isSuperAdmin && <TableCell onClick={() => handleEdit(patient)}>
                           <Badge variant="outline" className="flex items-center gap-1 w-fit">

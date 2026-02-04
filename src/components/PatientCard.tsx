@@ -2,7 +2,22 @@ import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { User, Phone, Mail, Building2, Pencil, FileText, Trash2 } from 'lucide-react';
+
+type CrmStatus = 'new_lead' | 'called_answered' | 'called_no_answer' | 'photos_received' | 'treatment_plan_sent' | 'follow_up' | 'confirmed' | 'completed' | 'lost';
+
+const CRM_STATUS_CONFIG: Record<CrmStatus, { label: string; color: string; bgColor: string }> = {
+  new_lead: { label: 'New Lead', color: 'text-slate-600', bgColor: 'bg-white border border-slate-300' },
+  called_answered: { label: 'Answered - Waiting Photos', color: 'text-blue-700', bgColor: 'bg-blue-100' },
+  called_no_answer: { label: 'No Answer - Call Back', color: 'text-yellow-700', bgColor: 'bg-yellow-100' },
+  photos_received: { label: 'Case Under Review', color: 'text-purple-700', bgColor: 'bg-purple-100' },
+  treatment_plan_sent: { label: 'Treatment Plan Sent', color: 'text-orange-700', bgColor: 'bg-orange-100' },
+  follow_up: { label: 'Follow-up - Pending', color: 'text-amber-700', bgColor: 'bg-amber-100' },
+  confirmed: { label: 'Confirmed - Deposit', color: 'text-green-700', bgColor: 'bg-green-100' },
+  completed: { label: 'Completed', color: 'text-emerald-800', bgColor: 'bg-emerald-200' },
+  lost: { label: 'Lost / Closed', color: 'text-red-700', bgColor: 'bg-red-100' },
+};
 
 interface PatientCardProps {
   patient: {
@@ -17,6 +32,7 @@ interface PatientCardProps {
     photo_url: string | null;
     created_at: string;
     organization_id: string;
+    crm_status?: CrmStatus | null;
     organizations?: {
       name: string;
     } | null;
@@ -25,9 +41,13 @@ interface PatientCardProps {
   onEdit: () => void;
   onDetails: () => void;
   onDelete: () => void;
+  onCrmStatusChange?: (patientId: string, newStatus: CrmStatus) => void;
 }
 
-export function PatientCard({ patient, isSuperAdmin, onEdit, onDetails, onDelete }: PatientCardProps) {
+export function PatientCard({ patient, isSuperAdmin, onEdit, onDetails, onDelete, onCrmStatusChange }: PatientCardProps) {
+  const currentStatus = patient.crm_status || 'new_lead';
+  const statusConfig = CRM_STATUS_CONFIG[currentStatus];
+
   return (
     <Card className="overflow-hidden">
       <CardContent className="p-4">
@@ -92,6 +112,27 @@ export function PatientCard({ patient, isSuperAdmin, onEdit, onDetails, onDelete
             <span className="text-muted-foreground">{patient.phone}</span>
           </div>
         </div>
+
+        {/* CRM Status */}
+        {onCrmStatusChange && (
+          <div className="mt-3">
+            <Select
+              value={currentStatus}
+              onValueChange={(value) => onCrmStatusChange(patient.id, value as CrmStatus)}
+            >
+              <SelectTrigger className={`w-full h-8 text-xs ${statusConfig.bgColor} ${statusConfig.color} border-0`}>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {Object.entries(CRM_STATUS_CONFIG).map(([key, config]) => (
+                  <SelectItem key={key} value={key}>
+                    <span className={`${config.color}`}>{config.label}</span>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        )}
 
         {/* Additional Info - Badges */}
         <div className="mt-3 flex flex-wrap gap-2">
