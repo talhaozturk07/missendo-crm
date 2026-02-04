@@ -9,6 +9,7 @@ import { Settings as SettingsIcon, Key, MessageSquare, TrendingUp, Save } from '
 import { useToast } from '@/hooks/use-toast';
 import { useState, useEffect } from 'react';
 import { ActivityLogs } from '@/components/ActivityLogs';
+import { ThemeSelector } from '@/components/ThemeSelector';
 
 export default function Settings() {
   const { profile, isSuperAdmin } = useAuth();
@@ -231,6 +232,9 @@ export default function Settings() {
             {loading ? 'Saving...' : 'Save Settings'}
           </Button>
         </div>
+
+        {/* Theme Selector - Super Admins Only */}
+        {isSuperAdmin && <ThemeSelector />}
 
         {/* Activity Logs - Super Admins Only */}
         {isSuperAdmin && <ActivityLogs />}
