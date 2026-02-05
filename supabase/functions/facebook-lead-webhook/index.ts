@@ -22,7 +22,12 @@
  
      console.log('Webhook verification request:', { mode, token, challenge });
  
-     const VERIFY_TOKEN = Deno.env.get('FB_WEBHOOK_VERIFY_TOKEN') || 'missendo_leads_2024';
+    const VERIFY_TOKEN = Deno.env.get('FB_WEBHOOK_VERIFY_TOKEN');
+    
+    if (!VERIFY_TOKEN) {
+      console.error('FB_WEBHOOK_VERIFY_TOKEN is not configured');
+      return new Response('Server configuration error', { status: 500 });
+    }
  
      if (mode === 'subscribe' && token === VERIFY_TOKEN) {
        console.log('Webhook verified successfully');
