@@ -73,12 +73,39 @@ export function FacebookConnectButton() {
 
   // Load Facebook SDK
   useEffect(() => {
+    // Check if SDK is already loaded
     if (window.FB) {
+      console.log('Facebook SDK already loaded');
       setSdkLoaded(true);
       return;
     }
 
+    // Check if script is already in the DOM
+    const existingScript = document.querySelector('script[src*="connect.facebook.net"]');
+    if (existingScript) {
+      console.log('Facebook SDK script already exists, waiting for load...');
+      // Wait for it to load
+      const checkFB = setInterval(() => {
+        if (window.FB) {
+          console.log('Facebook SDK loaded via existing script');
+          window.FB.init({
+            appId: FB_APP_ID,
+            cookie: true,
+            xfbml: true,
+            version: 'v19.0'
+          });
+          setSdkLoaded(true);
+          clearInterval(checkFB);
+        }
+      }, 100);
+      
+      // Timeout after 10 seconds
+      setTimeout(() => clearInterval(checkFB), 10000);
+      return;
+    }
+
     window.fbAsyncInit = function() {
+      console.log('Facebook SDK fbAsyncInit called');
       window.FB.init({
         appId: FB_APP_ID,
         cookie: true,
@@ -89,19 +116,20 @@ export function FacebookConnectButton() {
     };
 
     // Load SDK script
+    console.log('Loading Facebook SDK script...');
     const script = document.createElement('script');
     script.src = 'https://connect.facebook.net/en_US/sdk.js';
     script.async = true;
     script.defer = true;
-    document.body.appendChild(script);
-
-    return () => {
-      // Cleanup
-      const existingScript = document.querySelector('script[src="https://connect.facebook.net/en_US/sdk.js"]');
-      if (existingScript) {
-        existingScript.remove();
-      }
+    script.crossOrigin = 'anonymous';
+    script.onload = () => {
+      console.log('Facebook SDK script onload fired');
+      // fbAsyncInit should handle initialization
     };
+    script.onerror = (e) => {
+      console.error('Facebook SDK script failed to load:', e);
+    };
+    document.body.appendChild(script);
   }, []);
 
   useEffect(() => {
