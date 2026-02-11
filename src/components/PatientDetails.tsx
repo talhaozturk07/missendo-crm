@@ -139,8 +139,10 @@ export function PatientDetails({ patientId, onClose }: PatientDetailsProps) {
   const [pageNumber, setPageNumber] = useState<number>(1);
   const [activeTab, setActiveTab] = useState('notes');
   const [callLogCount, setCallLogCount] = useState<number>(0);
+  const [callLogs, setCallLogs] = useState<{ id: string; call_result: string; notes: string | null; called_at: string; called_by: string | null; caller?: { first_name: string; last_name: string } | null }[]>([]);
   const [showCallLogDialog, setShowCallLogDialog] = useState(false);
   const [callLogForm, setCallLogForm] = useState({ call_result: 'reached', notes: '' });
+  const [editingCallLog, setEditingCallLog] = useState<string | null>(null);
   const [savingCallLog, setSavingCallLog] = useState(false);
 
   const [appointmentForm, setAppointmentForm] = useState({
@@ -234,7 +236,7 @@ export function PatientDetails({ patientId, onClose }: PatientDetailsProps) {
         supabase.from('treatments').select('*').eq('organization_id', profile?.organization_id),
         supabase.from('patient_treatments').select('final_price').eq('patient_id', patientId),
         supabase.from('organizations').select('id, name').eq('is_active', true),
-        supabase.from('reminder_call_logs').select('id, reminders!inner(patient_id)', { count: 'exact', head: true }).eq('reminders.patient_id', patientId)
+        supabase.from('reminder_call_logs').select('id, call_result, notes, called_at, called_by, caller:profiles!reminder_call_logs_called_by_fkey(first_name, last_name), reminders!inner(patient_id)').eq('reminders.patient_id', patientId).order('called_at', { ascending: false })
       ]);
 
       // Calculate total cost from patient treatments
@@ -266,7 +268,9 @@ export function PatientDetails({ patientId, onClose }: PatientDetailsProps) {
       setTransfers(transfersRes.data || []);
       setTreatments(treatmentsRes.data || []);
       setOrganizations(organizationsRes.data || []);
-      setCallLogCount(callLogsRes.count || 0);
+      const callLogsData = (callLogsRes.data || []) as any[];
+      setCallLogs(callLogsData);
+      setCallLogCount(callLogsData.length);
     } catch (error) {
       console.error('Error loading data:', error);
     } finally {
@@ -1166,64 +1170,90 @@ export function PatientDetails({ patientId, onClose }: PatientDetailsProps) {
   const handleLogCall = async () => {
     setSavingCallLog(true);
     try {
-      // Find or create a reminder for this patient to attach the call log
-      let reminderId: string;
-      const { data: existingReminders } = await supabase
-        .from('reminders')
-        .select('id')
-        .eq('patient_id', patientId)
-        .order('created_at', { ascending: false })
-        .limit(1);
+      if (editingCallLog) {
+        // Update existing call log
+        const { error } = await supabase
+          .from('reminder_call_logs')
+          .update({
+            call_result: callLogForm.call_result,
+            notes: callLogForm.notes || null,
+          })
+          .eq('id', editingCallLog);
 
-      if (existingReminders && existingReminders.length > 0) {
-        reminderId = existingReminders[0].id;
+        if (error) throw error;
+
+        toast({ title: 'Success', description: 'Call log updated successfully' });
       } else {
-        // Create a general call reminder for this patient
-        const { data: newReminder, error: reminderError } = await supabase
+        // Find or create a reminder for this patient to attach the call log
+        let reminderId: string;
+        const { data: existingReminders } = await supabase
           .from('reminders')
-          .insert([{
-            title: `Call: ${patientInfo?.first_name} ${patientInfo?.last_name}`,
-            reminder_date: new Date().toISOString(),
-            reminder_type: 'call',
-            patient_id: patientId,
-            organization_id: profile?.organization_id,
-            created_by: profile?.id,
-            status: 'completed',
-            completed_at: new Date().toISOString(),
-          }])
           .select('id')
-          .single();
+          .eq('patient_id', patientId)
+          .order('created_at', { ascending: false })
+          .limit(1);
 
-        if (reminderError) throw reminderError;
-        reminderId = newReminder.id;
+        if (existingReminders && existingReminders.length > 0) {
+          reminderId = existingReminders[0].id;
+        } else {
+          const { data: newReminder, error: reminderError } = await supabase
+            .from('reminders')
+            .insert([{
+              title: `Call: ${patientInfo?.first_name} ${patientInfo?.last_name}`,
+              reminder_date: new Date().toISOString(),
+              reminder_type: 'call',
+              patient_id: patientId,
+              organization_id: profile?.organization_id,
+              created_by: profile?.id,
+              status: 'completed',
+              completed_at: new Date().toISOString(),
+            }])
+            .select('id')
+            .single();
+
+          if (reminderError) throw reminderError;
+          reminderId = newReminder.id;
+        }
+
+        const { error } = await supabase.from('reminder_call_logs').insert([{
+          reminder_id: reminderId,
+          call_result: callLogForm.call_result,
+          notes: callLogForm.notes || null,
+          called_by: profile?.id,
+        }]);
+
+        if (error) throw error;
+
+        toast({ title: 'Success', description: 'Call log added successfully' });
       }
 
-      const { error } = await supabase.from('reminder_call_logs').insert([{
-        reminder_id: reminderId,
-        call_result: callLogForm.call_result,
-        notes: callLogForm.notes || null,
-        called_by: profile?.id,
-      }]);
-
-      if (error) throw error;
-
-      toast({
-        title: 'Success',
-        description: 'Call log added successfully',
-      });
-
       setCallLogForm({ call_result: 'reached', notes: '' });
+      setEditingCallLog(null);
       setShowCallLogDialog(false);
       loadData();
     } catch (error) {
       console.error('Error logging call:', error);
-      toast({
-        title: 'Error',
-        description: 'Failed to log call',
-        variant: 'destructive',
-      });
+      toast({ title: 'Error', description: 'Failed to save call log', variant: 'destructive' });
     } finally {
       setSavingCallLog(false);
+    }
+  };
+
+  const handleEditCallLog = (log: typeof callLogs[0]) => {
+    setEditingCallLog(log.id);
+    setCallLogForm({ call_result: log.call_result, notes: log.notes || '' });
+    setShowCallLogDialog(true);
+  };
+
+  const handleDeleteCallLog = async (logId: string) => {
+    try {
+      const { error } = await supabase.from('reminder_call_logs').delete().eq('id', logId);
+      if (error) throw error;
+      toast({ title: 'Success', description: 'Call log deleted' });
+      loadData();
+    } catch (error) {
+      console.error('Error deleting call log:', error);
+      toast({ title: 'Error', description: 'Failed to delete call log', variant: 'destructive' });
     }
   };
 
@@ -1356,12 +1386,18 @@ export function PatientDetails({ patientId, onClose }: PatientDetailsProps) {
       </Card>
 
       {/* Log Call Dialog */}
-      <Dialog open={showCallLogDialog} onOpenChange={setShowCallLogDialog}>
+      <Dialog open={showCallLogDialog} onOpenChange={(open) => {
+        if (!open) {
+          setEditingCallLog(null);
+          setCallLogForm({ call_result: 'reached', notes: '' });
+        }
+        setShowCallLogDialog(open);
+      }}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Log Call</DialogTitle>
+            <DialogTitle>{editingCallLog ? 'Edit Call Log' : 'Log Call'}</DialogTitle>
             <DialogDescription>
-              Record a call for {patientInfo?.first_name} {patientInfo?.last_name}
+              {editingCallLog ? 'Update call record' : `Record a call for ${patientInfo?.first_name} ${patientInfo?.last_name}`}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
@@ -1392,7 +1428,7 @@ export function PatientDetails({ patientId, onClose }: PatientDetailsProps) {
             <div className="flex justify-end gap-2">
               <Button variant="outline" onClick={() => setShowCallLogDialog(false)}>Cancel</Button>
               <Button onClick={handleLogCall} disabled={savingCallLog}>
-                {savingCallLog ? 'Saving...' : 'Save'}
+                {savingCallLog ? 'Saving...' : editingCallLog ? 'Update' : 'Save'}
               </Button>
             </div>
           </div>
@@ -1411,12 +1447,14 @@ export function PatientDetails({ patientId, onClose }: PatientDetailsProps) {
                   {activeTab === 'transfers' && <Plane className="w-4 h-4" />}
                   {activeTab === 'appointments' && <Calendar className="w-4 h-4" />}
                   {activeTab === 'documents' && <FileText className="w-4 h-4" />}
+                  {activeTab === 'calls' && <PhoneCall className="w-4 h-4" />}
                   <span>
                     {activeTab === 'notes' && 'Notes'}
                     {activeTab === 'payments' && 'Payments'}
                     {activeTab === 'transfers' && 'Transfers'}
                     {activeTab === 'appointments' && 'Appointments'}
                     {activeTab === 'documents' && 'Documents'}
+                    {activeTab === 'calls' && `Calls (${callLogCount})`}
                   </span>
                 </div>
               </SelectValue>
@@ -1452,11 +1490,17 @@ export function PatientDetails({ patientId, onClose }: PatientDetailsProps) {
                   Documents
                 </div>
               </SelectItem>
+              <SelectItem value="calls">
+                <div className="flex items-center gap-2">
+                  <PhoneCall className="w-4 h-4" />
+                  Calls ({callLogCount})
+                </div>
+              </SelectItem>
             </SelectContent>
           </Select>
         ) : (
           /* Desktop: Original TabsList */
-          <TabsList className="grid w-full grid-cols-5">
+          <TabsList className="grid w-full grid-cols-6">
             <TabsTrigger value="notes">
               <MessageSquare className="w-4 h-4 mr-2" />
               Notes
@@ -1476,6 +1520,10 @@ export function PatientDetails({ patientId, onClose }: PatientDetailsProps) {
             <TabsTrigger value="documents">
               <FileText className="w-4 h-4 mr-2" />
               Documents
+            </TabsTrigger>
+            <TabsTrigger value="calls">
+              <PhoneCall className="w-4 h-4 mr-2" />
+              Calls
             </TabsTrigger>
           </TabsList>
         )}
@@ -2627,6 +2675,78 @@ export function PatientDetails({ patientId, onClose }: PatientDetailsProps) {
                         </CardContent>
                       </Card>
                     ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Calls Tab */}
+        <TabsContent value="calls" className="space-y-4 mt-4">
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="flex items-center justify-between">
+                <div className="flex items-center gap-2 text-base md:text-lg">
+                  <PhoneCall className="h-5 w-5" />
+                  Call History
+                </div>
+                <Button size="sm" onClick={() => { setEditingCallLog(null); setCallLogForm({ call_result: 'reached', notes: '' }); setShowCallLogDialog(true); }}>
+                  <Plus className="w-4 h-4 mr-1" />
+                  Log Call
+                </Button>
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {callLogs.length === 0 ? (
+                <p className="text-center text-muted-foreground py-4">No call records yet</p>
+              ) : (
+                <div className="space-y-3">
+                  {callLogs.map(log => {
+                    const resultLabels: Record<string, string> = {
+                      reached: 'Reached',
+                      no_answer: 'No Answer',
+                      busy: 'Busy',
+                      voicemail: 'Voicemail',
+                      wrong_number: 'Wrong Number',
+                    };
+                    const resultColors: Record<string, string> = {
+                      reached: 'bg-green-100 text-green-800 dark:bg-green-950 dark:text-green-300',
+                      no_answer: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-950 dark:text-yellow-300',
+                      busy: 'bg-orange-100 text-orange-800 dark:bg-orange-950 dark:text-orange-300',
+                      voicemail: 'bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-300',
+                      wrong_number: 'bg-red-100 text-red-800 dark:bg-red-950 dark:text-red-300',
+                    };
+                    return (
+                      <div key={log.id} className="p-3 border rounded-lg bg-muted/30">
+                        <div className="flex justify-between items-start">
+                          <div className="space-y-1">
+                            <div className="flex items-center gap-2">
+                              <Badge className={resultColors[log.call_result] || ''}>
+                                {resultLabels[log.call_result] || log.call_result}
+                              </Badge>
+                              <span className="text-xs text-muted-foreground">
+                                {format(new Date(log.called_at), 'dd.MM.yyyy HH:mm')}
+                              </span>
+                            </div>
+                            {log.notes && <p className="text-sm text-muted-foreground">{log.notes}</p>}
+                            {log.caller && (
+                              <p className="text-xs text-muted-foreground">
+                                By: {log.caller.first_name} {log.caller.last_name}
+                              </p>
+                            )}
+                          </div>
+                          <div className="flex gap-1">
+                            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleEditCallLog(log)}>
+                              <Pencil className="h-4 w-4" />
+                            </Button>
+                            <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive" onClick={() => handleDeleteCallLog(log.id)}>
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
               )}
             </CardContent>
