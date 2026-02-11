@@ -1,62 +1,50 @@
 
-# Facebook OAuth API Versiyonu Güncelleme Planı
+# Hasta Satır Tıklama ve Detay Sayfası Geliştirmesi
 
-## Sorun Analizi
+## Sorun
+Hasta listesinde bir satıra tıklandığında **düzenleme formu** açılıyor. Kullanıcı beklentisi: satıra tıklayınca **detay sayfası** açılmalı.
 
-Graph API Explorer'da `/me/accounts` endpoint'i **Dridora** sayfasını başarıyla döndürüyor, ancak CRM'deki Facebook Connect butonu aynı hesap için "sayfa bulunamadı" hatası veriyor.
+## Yapılacak Degisiklikler
 
-**Tespit edilen fark:**
-- Graph API Explorer: **v24.0** kullanıyor
-- Edge Function: **v19.0** kullanıyor (eski versiyon)
+### 1. Satır Tiklama Davranisini Degistir
+**Dosya:** `src/pages/Patients.tsx`
 
-Facebook API v19.0, 2024 sonlarında deprecated oldu ve bazı endpoint davranışları değişmiş olabilir.
+- Satir 819'da `onClick={() => handleEdit(patient)}` yerine detay sayfasini acacak sekilde degistirilecek
+- Satir 850'deki superAdmin klinik hucresindeki `onClick` da ayni sekilde guncellenecek
+- Artik satira tiklandiginda `setSelectedPatient(patient)` + `setShowPatientDetails(true)` calisacak
 
-## Çözüm
+### 2. Detay Sayfasinda Ozet Bilgi Paneli Ekle
+**Dosya:** `src/components/PatientDetails.tsx`
 
-`facebook-oauth` edge function'ındaki tüm Graph API çağrılarının versiyonunu `v19.0`'dan `v21.0`'a güncelleyeceğim.
+Detay sayfasi acildiginda, sekmelerin ustunde su bilgileri gosteren bir ozet panel eklenecek:
 
-### Değiştirilecek Dosya
+```text
++------------------------------------------+
+| Randevular: 2 adet | Arama: 5 kez        |
+| [+ Randevu Olustur]  (appointment yoksa)  |
++------------------------------------------+
+```
 
-**supabase/functions/facebook-oauth/index.ts**
+- **Randevu sayisi:** `appointments` tablosundan `patient_id` ile sayilacak (zaten yukleniyor)
+- **Arama sayisi:** `reminders` tablosu uzerinden `reminder_call_logs` sayisi cekilecek
+- **Randevu yoksa:** "Henuz randevu yok" mesaji + **"Randevu Olustur"** kisayol butonu gosterilecek. Bu buton tiklandiginda `activeTab` otomatik olarak `appointments` sekmesine gecip formu hazirlayacak.
 
-Aşağıdaki satırlarda `v19.0` → `v21.0` değişikliği yapılacak:
-
-| Satır | Endpoint | Açıklama |
-|-------|----------|----------|
-| 29 | `/me/permissions` | İzin kontrolü |
-| 65 | `/me/accounts` | Sayfa listesi |
-| 90 | `/me/businesses` | Business API |
-| 122 | `/me` | Kullanıcı bilgisi |
-| 223 | `/oauth/access_token` | Token exchange |
-| 356 | `/me/adaccounts` | Reklam hesapları |
-| 374 | `/campaigns` | Kampanya listesi |
-| 414 | `/adsets` | Ad set listesi |
-| 497+ | Webhook subscription | Webhook kayıt |
-
-**Toplam:** ~10 API çağrısı güncellenecek
+### 3. Mobil Kart Gorunumunde Degisiklik Yok
+`PatientCard` bileseninde zaten `onDetails` ve `onEdit` ayri butonlar olarak mevcut, dogru calisiyor.
 
 ## Teknik Detaylar
 
-```text
-API Versiyon Değişikliği:
-- Eski: https://graph.facebook.com/v19.0/...
-- Yeni: https://graph.facebook.com/v21.0/...
+### Veritabani Sorgulari (mevcut + yeni)
+- Randevular: Zaten `loadData` icinde yukleniyor, `appointments.length` kullanilacak
+- Arama kayitlari: Yeni sorgu eklenecek:
+  ```sql
+  SELECT count(*) FROM reminder_call_logs rcl
+  JOIN reminders r ON rcl.reminder_id = r.id
+  WHERE r.patient_id = :patientId
+  ```
 
-Neden v21.0?
-- v24.0 çok yeni, bazı endpoint'ler henüz stabil olmayabilir
-- v21.0 Meta'nın önerdiği stabil LTS versiyonu
-- 2 yıl boyunca desteklenecek
-```
-
-## Test Planı
-
-1. Edge function deploy edilecek
-2. CRM Settings'den "Facebook ile Bağlan" tıklanacak
-3. OAuth popup açılacak ve izinler verilecek
-4. Dridora sayfasının listede görünmesi bekleniyor
-
-## Önemli Not
-
-Eğer API versiyonu güncellemesi sorunu çözmezse, sorun **Development Mode** kısıtlamasından kaynaklanıyor demektir. Bu durumda:
-- Meta Developer Console'da App Roles bölümüne hesabın ekli olduğundan emin ol
-- Veya App Review tamamlanarak Advanced Access alınmalı
+### Degisecek Dosyalar
+| Dosya | Degisiklik |
+|-------|-----------|
+| `src/pages/Patients.tsx` | Satir tiklamasi `handleEdit` yerine detay acma |
+| `src/components/PatientDetails.tsx` | Ozet panel + arama sayisi + kisayol buton |
