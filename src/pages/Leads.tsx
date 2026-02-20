@@ -108,13 +108,13 @@ export default function Leads() {
       if (showToast) {
         if (data?.newLeadsCount > 0) {
           toast({
-            title: "Yeni Lead'ler Eklendi",
-            description: `${data.newLeadsCount} yeni lead Facebook'tan senkronize edildi`,
+            title: "New Leads Added",
+            description: `${data.newLeadsCount} new lead(s) synced from Facebook`,
           });
         } else {
           toast({
-            title: "Lead Kontrolü Tamamlandı",
-            description: "Yeni lead bulunamadı",
+            title: "Lead Check Complete",
+            description: "No new leads found",
           });
         }
       }
@@ -125,8 +125,8 @@ export default function Leads() {
       console.error('Error polling Facebook leads:', error);
       if (showToast) {
         toast({
-          title: "Hata",
-          description: "Facebook lead'leri senkronize edilemedi",
+          title: "Error",
+          description: "Failed to sync Facebook leads",
           variant: "destructive",
         });
       }
@@ -373,7 +373,7 @@ export default function Leads() {
               ) : (
                 <RefreshCw className="w-4 h-4 mr-2" />
               )}
-              {isPolling ? 'Senkronize Ediliyor...' : 'Lead Senkronize Et'}
+              {isPolling ? 'Syncing...' : 'Sync Leads'}
             </Button>
             <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
               <DialogTrigger asChild>
