@@ -297,14 +297,14 @@ serve(async (req) => {
 
         if (pagesResult.pages.length === 0) {
           // Detailed error message based on what we found
-          let errorMessage = 'Facebook sayfası bulunamadı.';
+          let errorMessage = 'No Facebook page found.';
           let errorCode = 'NO_PAGES';
           
           if (permissionCheck.missing.length > 0) {
-            errorMessage = `Eksik izinler: ${permissionCheck.missing.join(', ')}. Facebook izin ayarlarını kontrol edin.`;
+            errorMessage = `Missing permissions: ${permissionCheck.missing.join(', ')}. Please check your Facebook permission settings.`;
             errorCode = 'MISSING_PERMISSIONS';
           } else if (permissionCheck.declined.length > 0) {
-            errorMessage = `Reddedilen izinler: ${permissionCheck.declined.join(', ')}. Facebook ayarlarından izinleri yeniden verin.`;
+            errorMessage = `Declined permissions: ${permissionCheck.declined.join(', ')}. Please re-grant permissions from your Facebook settings.`;
             errorCode = 'DECLINED_PERMISSIONS';
           }
 
@@ -459,7 +459,7 @@ serve(async (req) => {
         const selectedPage = pagesResult.pages.find((p: any) => p.id === pageId);
         if (!selectedPage) {
           return new Response(JSON.stringify({ 
-            error: 'Sayfa bulunamadı veya erişim yok. Sayfada admin olduğunuzdan emin olun.',
+            error: 'Page not found or access denied. Make sure you are an admin on the page.',
             errorCode: 'PAGE_NOT_FOUND'
           }), {
             status: 400,
@@ -472,7 +472,7 @@ serve(async (req) => {
         if (!pageAccessToken) {
           console.error('No page access token available for page:', pageId);
           return new Response(JSON.stringify({ 
-            error: 'Sayfa erişim token\'ı alınamadı. Lütfen Facebook izinlerini kontrol edin.',
+            error: 'Could not retrieve page access token. Please check your Facebook permissions.',
             errorCode: 'NO_PAGE_TOKEN'
           }), {
             status: 400,

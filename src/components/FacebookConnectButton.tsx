@@ -8,7 +8,6 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { Facebook, Check, X, Loader2, AlertCircle, ChevronRight, Filter, Settings2, ExternalLink, AlertTriangle } from 'lucide-react';
 import { format } from 'date-fns';
-import { tr } from 'date-fns/locale';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
@@ -128,18 +127,15 @@ export function FacebookConnectButton() {
 
   // Load Facebook SDK
   useEffect(() => {
-    // Check if SDK is already loaded
     if (window.FB) {
       console.log('Facebook SDK already loaded');
       setSdkLoaded(true);
       return;
     }
 
-    // Check if script is already in the DOM
     const existingScript = document.querySelector('script[src*="connect.facebook.net"]');
     if (existingScript) {
       console.log('Facebook SDK script already exists, waiting for load...');
-      // Wait for it to load
       const checkFB = setInterval(() => {
         if (window.FB) {
           console.log('Facebook SDK loaded via existing script');
@@ -154,7 +150,6 @@ export function FacebookConnectButton() {
         }
       }, 100);
       
-      // Timeout after 10 seconds
       setTimeout(() => clearInterval(checkFB), 10000);
       return;
     }
@@ -170,7 +165,6 @@ export function FacebookConnectButton() {
       setSdkLoaded(true);
     };
 
-    // Load SDK script
     console.log('Loading Facebook SDK script...');
     const script = document.createElement('script');
     script.src = 'https://connect.facebook.net/en_US/sdk.js';
@@ -193,8 +187,8 @@ export function FacebookConnectButton() {
   const handleFacebookLogin = () => {
     if (!sdkLoaded || !window.FB) {
       toast({
-        title: 'Hata',
-        description: 'Facebook SDK yükleniyor, lütfen bekleyin...',
+        title: 'Error',
+        description: 'Facebook SDK is loading, please wait...',
         variant: 'destructive',
       });
       return;
@@ -207,9 +201,9 @@ export function FacebookConnectButton() {
       console.warn('FB.login timed out - possible popup block');
       setLoading(false);
       toast({
-        title: 'Facebook penceresi açılamadı',
+        title: 'Facebook window could not be opened',
         description:
-          'Popup engellenmiş olabilir. Tarayıcı adres çubuğundaki popup engelleme ikonundan izin verip tekrar deneyin.',
+          'The popup may be blocked. Allow popups from the browser address bar icon and try again.',
         variant: 'destructive',
       });
     }, 20000);
@@ -226,7 +220,6 @@ export function FacebookConnectButton() {
               setFbUserId(userID);
 
               try {
-                // Exchange for long-lived token
                 const { data: session } = await supabase.auth.getSession();
                 if (!session?.session?.access_token) {
                   throw new Error('Not authenticated');
@@ -243,13 +236,11 @@ export function FacebookConnectButton() {
                 const { longLivedToken: token, permissions } = exchangeRes.data;
                 setLongLivedToken(token);
 
-                // Check for permission issues
                 if (permissions?.missing?.length > 0 || permissions?.declined?.length > 0) {
                   console.warn('Permission issues detected:', permissions);
                   setPermissionInfo(permissions);
                 }
 
-                // Get pages
                 const pagesRes = await supabase.functions.invoke('facebook-oauth', {
                   body: { action: 'pages', longLivedToken: token },
                 });
@@ -261,7 +252,6 @@ export function FacebookConnectButton() {
                 const { pages: userPages, error: pagesError, errorCode: pagesErrorCode, permissions: pagesPermissions } = pagesRes.data;
 
                 if (!userPages || userPages.length === 0) {
-                  // Show detailed error dialog
                   setPermissionInfo(pagesPermissions || permissions);
                   setErrorCode(pagesErrorCode || 'NO_PAGES');
                   setShowPermissionError(true);
@@ -274,15 +264,15 @@ export function FacebookConnectButton() {
               } catch (error: any) {
                 console.error('Facebook connect error:', error);
                 toast({
-                  title: 'Bağlantı Hatası',
-                  description: error.message || 'Facebook bağlantısı kurulamadı',
+                  title: 'Connection Error',
+                  description: error.message || 'Failed to connect to Facebook',
                   variant: 'destructive',
                 });
               }
             } else {
               toast({
-                title: 'İptal Edildi',
-                description: 'Facebook girişi iptal edildi veya izinler reddedildi.',
+                title: 'Cancelled',
+                description: 'Facebook login was cancelled or permissions were denied.',
                 variant: 'destructive',
               });
             }
@@ -301,8 +291,8 @@ export function FacebookConnectButton() {
       console.error('FB.login threw error:', e);
       setLoading(false);
       toast({
-        title: 'Facebook girişi başlatılamadı',
-        description: 'Tarayıcı güvenlik ayarları / reklam engelleyici Facebook popupını engelliyor olabilir.',
+        title: 'Could not start Facebook login',
+        description: 'Browser security settings or an ad blocker may be blocking the Facebook popup.',
         variant: 'destructive',
       });
     }
@@ -315,14 +305,12 @@ export function FacebookConnectButton() {
     setShowCampaignDialog(true);
 
     try {
-      // Fetch campaigns
       const campaignsRes = await supabase.functions.invoke('facebook-oauth', {
         body: { action: 'campaigns', longLivedToken, pageId: page.id },
       });
 
       if (campaignsRes.error) {
         console.error('Campaigns fetch error:', campaignsRes.error);
-        // If no campaigns found, proceed with page connection only
         setCampaigns([]);
       } else {
         setCampaigns(campaignsRes.data?.campaigns || []);
@@ -341,7 +329,6 @@ export function FacebookConnectButton() {
     let newSelectedCampaigns: SelectedItem[];
     if (isSelected) {
       newSelectedCampaigns = selectedCampaigns.filter(c => c.id !== campaign.id);
-      // Also remove adsets from this campaign
       setSelectedAdsets(prev => prev.filter(a => {
         const adset = adsets.find(ad => ad.id === a.id);
         return adset?.campaignId !== campaign.id;
@@ -352,7 +339,6 @@ export function FacebookConnectButton() {
     
     setSelectedCampaigns(newSelectedCampaigns);
 
-    // Fetch adsets for newly selected campaigns
     if (!isSelected && longLivedToken) {
       setLoadingAdsets(true);
       try {
@@ -409,12 +395,12 @@ export function FacebookConnectButton() {
       }
 
       const filterInfo = selectedCampaigns.length > 0 
-        ? ` ${selectedCampaigns.length} kampanya ve ${selectedAdsets.length} ad set seçildi.`
-        : ' Tüm lead\'ler senkronize edilecek.';
+        ? ` ${selectedCampaigns.length} campaign(s) and ${selectedAdsets.length} ad set(s) selected.`
+        : ' All leads will be synced.';
 
       toast({
-        title: 'Bağlantı Başarılı! 🎉',
-        description: `${selectedPage.name} sayfası CRM'e bağlandı.${filterInfo}`,
+        title: 'Connection Successful! 🎉',
+        description: `${selectedPage.name} page has been connected to the CRM.${filterInfo}`,
       });
 
       await loadConnectionStatus();
@@ -422,8 +408,8 @@ export function FacebookConnectButton() {
     } catch (error: any) {
       console.error('Page connect error:', error);
       toast({
-        title: 'Bağlantı Hatası',
-        description: error.message || 'Sayfa bağlanamadı',
+        title: 'Connection Error',
+        description: error.message || 'Failed to connect the page',
         variant: 'destructive',
       });
     } finally {
@@ -435,28 +421,24 @@ export function FacebookConnectButton() {
     setShowFilterDialog(true);
     setLoadingCampaigns(true);
     
-    // Load current filters
     setSelectedCampaigns(connectionStatus.selectedCampaigns);
     setSelectedAdsets(connectionStatus.selectedAdsets);
 
     try {
-      // Get fresh token from backend
       const filtersRes = await supabase.functions.invoke('facebook-oauth', {
         body: { action: 'get-filters' },
       });
 
       if (filtersRes.error || !filtersRes.data?.hasToken) {
         toast({
-          title: 'Hata',
-          description: 'Kampanya bilgisi alınamadı. Lütfen tekrar bağlanın.',
+          title: 'Error',
+          description: 'Could not retrieve campaign information. Please reconnect.',
           variant: 'destructive',
         });
         setShowFilterDialog(false);
         return;
       }
 
-      // We need to re-login to get a fresh token for API calls
-      // For now, show current filters but inform user
       setCampaigns([]);
       setAdsets([]);
       
@@ -484,8 +466,8 @@ export function FacebookConnectButton() {
       }
 
       toast({
-        title: 'Filtreler Güncellendi',
-        description: `${selectedCampaigns.length} kampanya ve ${selectedAdsets.length} ad set seçili.`,
+        title: 'Filters Updated',
+        description: `${selectedCampaigns.length} campaign(s) and ${selectedAdsets.length} ad set(s) selected.`,
       });
 
       await loadConnectionStatus();
@@ -493,8 +475,8 @@ export function FacebookConnectButton() {
     } catch (error: any) {
       console.error('Filter update error:', error);
       toast({
-        title: 'Hata',
-        description: error.message || 'Filtreler güncellenemedi',
+        title: 'Error',
+        description: error.message || 'Failed to update filters',
         variant: 'destructive',
       });
     } finally {
@@ -503,7 +485,7 @@ export function FacebookConnectButton() {
   };
 
   const handleDisconnect = async () => {
-    if (!confirm('Facebook bağlantısını kaldırmak istediğinize emin misiniz?')) {
+    if (!confirm('Are you sure you want to disconnect Facebook?')) {
       return;
     }
 
@@ -519,8 +501,8 @@ export function FacebookConnectButton() {
       }
 
       toast({
-        title: 'Bağlantı Kaldırıldı',
-        description: 'Facebook sayfası bağlantısı kaldırıldı.',
+        title: 'Disconnected',
+        description: 'Facebook page connection has been removed.',
       });
 
       setConnectionStatus({
@@ -534,8 +516,8 @@ export function FacebookConnectButton() {
     } catch (error: any) {
       console.error('Disconnect error:', error);
       toast({
-        title: 'Hata',
-        description: error.message || 'Bağlantı kaldırılamadı',
+        title: 'Error',
+        description: error.message || 'Failed to disconnect',
         variant: 'destructive',
       });
     } finally {
@@ -564,28 +546,28 @@ export function FacebookConnectButton() {
   const getPermissionErrorMessage = () => {
     if (!permissionInfo) {
       return {
-        title: 'Sayfa Bulunamadı',
-        description: 'Facebook hesabınıza bağlı yönetici olduğunuz bir sayfa bulunamadı.'
+        title: 'Page Not Found',
+        description: 'No Facebook page was found where you are an administrator.'
       };
     }
 
     if (permissionInfo.declined.length > 0) {
       return {
-        title: 'İzinler Reddedildi',
-        description: `Şu izinler reddedildi: ${permissionInfo.declined.join(', ')}. Bu izinler lead\'lerin çekilmesi için gereklidir.`
+        title: 'Permissions Declined',
+        description: `The following permissions were declined: ${permissionInfo.declined.join(', ')}. These permissions are required to retrieve leads.`
       };
     }
 
     if (permissionInfo.missing.length > 0) {
       return {
-        title: 'Eksik İzinler',
-        description: `Şu izinler eksik: ${permissionInfo.missing.join(', ')}. Facebook uygulama ayarlarından bu izinleri vermeniz gerekiyor.`
+        title: 'Missing Permissions',
+        description: `The following permissions are missing: ${permissionInfo.missing.join(', ')}. You need to grant these permissions from your Facebook app settings.`
       };
     }
 
     return {
-      title: 'Sayfa Bulunamadı',
-      description: 'Meta Business Suite\'te sayfa yöneticisi olduğunuzdan emin olun.'
+      title: 'Page Not Found',
+      description: 'Make sure you are a page administrator in Meta Business Suite.'
     };
   };
 
@@ -598,7 +580,7 @@ export function FacebookConnectButton() {
             Facebook Lead Ads
           </CardTitle>
           <CardDescription>
-            Facebook sayfanızı bağlayarak lead'lerin otomatik olarak CRM'e aktarılmasını sağlayın
+            Connect your Facebook page to automatically sync leads into your CRM
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -608,11 +590,11 @@ export function FacebookConnectButton() {
                 <Check className="w-5 h-5 text-success" />
                 <div className="flex-1">
                   <p className="font-medium text-success">
-                    Bağlı: {connectionStatus.pageName}
+                    Connected: {connectionStatus.pageName}
                   </p>
                   {connectionStatus.connectedAt && (
                     <p className="text-sm text-success/80">
-                      Bağlantı: {format(new Date(connectionStatus.connectedAt), 'd MMMM yyyy', { locale: tr })}
+                      Connected on: {format(new Date(connectionStatus.connectedAt), 'MMMM d, yyyy')}
                     </p>
                   )}
                 </div>
@@ -625,7 +607,7 @@ export function FacebookConnectButton() {
                   {connectionStatus.selectedCampaigns.length > 0 ? (
                     <div className="space-y-1">
                       <p className="text-sm font-medium">
-                        {connectionStatus.selectedCampaigns.length} Kampanya Seçili
+                        {connectionStatus.selectedCampaigns.length} Campaign(s) Selected
                       </p>
                       <div className="flex flex-wrap gap-1">
                         {connectionStatus.selectedCampaigns.slice(0, 3).map(c => (
@@ -635,19 +617,19 @@ export function FacebookConnectButton() {
                         ))}
                         {connectionStatus.selectedCampaigns.length > 3 && (
                           <Badge variant="outline" className="text-xs">
-                            +{connectionStatus.selectedCampaigns.length - 3} daha
+                            +{connectionStatus.selectedCampaigns.length - 3} more
                           </Badge>
                         )}
                       </div>
                       {connectionStatus.selectedAdsets.length > 0 && (
                         <p className="text-xs text-muted-foreground mt-1">
-                          {connectionStatus.selectedAdsets.length} Ad Set seçili
+                          {connectionStatus.selectedAdsets.length} Ad Set(s) selected
                         </p>
                       )}
                     </div>
                   ) : (
                     <p className="text-sm text-muted-foreground">
-                      Tüm kampanyalardan lead'ler alınıyor
+                      Receiving leads from all campaigns
                     </p>
                   )}
                 </div>
@@ -672,7 +654,7 @@ export function FacebookConnectButton() {
                 ) : (
                   <X className="w-4 h-4 mr-2" />
                 )}
-                Bağlantıyı Kaldır
+                Disconnect
               </Button>
             </div>
           ) : (
@@ -680,7 +662,7 @@ export function FacebookConnectButton() {
               <div className="flex items-start gap-2 p-3 bg-primary/10 border border-primary/30 rounded-lg">
                 <AlertCircle className="w-5 h-5 text-primary mt-0.5" />
                 <p className="text-sm text-muted-foreground">
-                  Facebook ile bağlanarak, lead form'larından gelen kişilerin otomatik olarak CRM'e eklenmesini sağlayabilirsiniz.
+                  Connect with Facebook to automatically sync contacts from your lead forms into the CRM.
                 </p>
               </div>
               <Button 
@@ -694,7 +676,7 @@ export function FacebookConnectButton() {
                 ) : (
                   <Facebook className="w-4 h-4 mr-2" />
                 )}
-                {!sdkLoaded ? 'Yükleniyor...' : 'Facebook ile Bağlan'}
+                {!sdkLoaded ? 'Loading...' : 'Connect with Facebook'}
               </Button>
             </div>
           )}
@@ -708,9 +690,9 @@ export function FacebookConnectButton() {
       }}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Sayfa Seçin</DialogTitle>
+            <DialogTitle>Select a Page</DialogTitle>
             <DialogDescription>
-              Lead'lerin geleceği Facebook sayfasını seçin
+              Choose the Facebook page from which leads will be synced
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-2 mt-4">
@@ -743,10 +725,10 @@ export function FacebookConnectButton() {
       }}>
         <DialogContent className="max-w-2xl max-h-[80vh]">
           <DialogHeader>
-            <DialogTitle>Kampanya ve Ad Set Seçimi</DialogTitle>
+            <DialogTitle>Campaign & Ad Set Selection</DialogTitle>
             <DialogDescription>
-              {selectedPage?.name} sayfası için hangi kampanyalardan lead almak istediğinizi seçin.
-              Hiçbir şey seçmezseniz tüm lead'ler senkronize edilir.
+              Select which campaigns to receive leads from for the {selectedPage?.name} page.
+              If you don't select any, all leads will be synced.
             </DialogDescription>
           </DialogHeader>
           
@@ -754,15 +736,15 @@ export function FacebookConnectButton() {
             {loadingCampaigns ? (
               <div className="flex items-center justify-center py-8">
                 <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
-                <span className="ml-2 text-muted-foreground">Kampanyalar yükleniyor...</span>
+                <span className="ml-2 text-muted-foreground">Loading campaigns...</span>
               </div>
             ) : campaigns.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-8 text-center">
                 <AlertCircle className="w-8 h-8 text-muted-foreground mb-2" />
                 <p className="text-muted-foreground">
-                  Lead Generation kampanyası bulunamadı.
+                  No Lead Generation campaigns found.
                   <br />
-                  <span className="text-sm">Tüm lead'ler otomatik olarak senkronize edilecek.</span>
+                  <span className="text-sm">All leads will be synced automatically.</span>
                 </p>
               </div>
             ) : (
@@ -771,7 +753,7 @@ export function FacebookConnectButton() {
                 <div>
                   <h4 className="font-medium mb-2 flex items-center gap-2">
                     <Filter className="w-4 h-4" />
-                    Kampanyalar ({campaigns.length})
+                    Campaigns ({campaigns.length})
                   </h4>
                   <div className="space-y-2">
                     {campaigns.map((campaign) => (
@@ -801,12 +783,12 @@ export function FacebookConnectButton() {
                   <div>
                     <h4 className="font-medium mb-2 flex items-center gap-2">
                       <Filter className="w-4 h-4" />
-                      Ad Setler
+                      Ad Sets
                       {loadingAdsets && <Loader2 className="w-4 h-4 animate-spin" />}
                     </h4>
                     {getSelectedCampaignAdsets().length === 0 ? (
                       <p className="text-sm text-muted-foreground py-2">
-                        {loadingAdsets ? 'Yükleniyor...' : 'Seçili kampanyalarda ad set bulunamadı veya tüm ad setler alınacak.'}
+                        {loadingAdsets ? 'Loading...' : 'No ad sets found in selected campaigns, or all ad sets will be included.'}
                       </p>
                     ) : (
                       <div className="space-y-2">
@@ -823,7 +805,7 @@ export function FacebookConnectButton() {
                             <div className="flex-1">
                               <p className="font-medium text-sm">{adset.name}</p>
                               <p className="text-xs text-muted-foreground">
-                                Kampanya: {campaigns.find(c => c.id === adset.campaignId)?.name}
+                                Campaign: {campaigns.find(c => c.id === adset.campaignId)?.name}
                               </p>
                             </div>
                             <Badge variant={adset.status === 'ACTIVE' ? 'default' : 'secondary'}>
@@ -842,14 +824,14 @@ export function FacebookConnectButton() {
           <DialogFooter className="flex-col sm:flex-row gap-2">
             <div className="flex-1 text-sm text-muted-foreground">
               {selectedCampaigns.length > 0 
-                ? `${selectedCampaigns.length} kampanya, ${selectedAdsets.length} ad set seçili`
-                : 'Tüm lead\'ler senkronize edilecek'}
+                ? `${selectedCampaigns.length} campaign(s), ${selectedAdsets.length} ad set(s) selected`
+                : 'All leads will be synced'}
             </div>
             <Button variant="outline" onClick={() => {
               setShowCampaignDialog(false);
               resetState();
             }}>
-              İptal
+              Cancel
             </Button>
             <Button onClick={handleCompleteConnection} disabled={loading}>
               {loading ? (
@@ -857,7 +839,7 @@ export function FacebookConnectButton() {
               ) : (
                 <Check className="w-4 h-4 mr-2" />
               )}
-              Bağlantıyı Tamamla
+              Complete Connection
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -867,15 +849,15 @@ export function FacebookConnectButton() {
       <Dialog open={showFilterDialog} onOpenChange={setShowFilterDialog}>
         <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle>Kampanya Filtreleri</DialogTitle>
+            <DialogTitle>Campaign Filters</DialogTitle>
             <DialogDescription>
-              Mevcut kampanya ve ad set seçimlerinizi güncelleyin.
+              Update your current campaign and ad set selections.
             </DialogDescription>
           </DialogHeader>
           
           <div className="space-y-4 py-4">
             <div className="p-3 bg-muted/50 rounded-lg">
-              <p className="text-sm font-medium mb-2">Seçili Kampanyalar</p>
+              <p className="text-sm font-medium mb-2">Selected Campaigns</p>
               {selectedCampaigns.length > 0 ? (
                 <div className="flex flex-wrap gap-1">
                   {selectedCampaigns.map(c => (
@@ -890,12 +872,12 @@ export function FacebookConnectButton() {
                   ))}
                 </div>
               ) : (
-                <p className="text-sm text-muted-foreground">Tüm kampanyalar</p>
+                <p className="text-sm text-muted-foreground">All campaigns</p>
               )}
             </div>
 
             <div className="p-3 bg-muted/50 rounded-lg">
-              <p className="text-sm font-medium mb-2">Seçili Ad Setler</p>
+              <p className="text-sm font-medium mb-2">Selected Ad Sets</p>
               {selectedAdsets.length > 0 ? (
                 <div className="flex flex-wrap gap-1">
                   {selectedAdsets.map(a => (
@@ -910,25 +892,25 @@ export function FacebookConnectButton() {
                   ))}
                 </div>
               ) : (
-                <p className="text-sm text-muted-foreground">Tüm ad setler</p>
+                <p className="text-sm text-muted-foreground">All ad sets</p>
               )}
             </div>
 
             <div className="flex items-start gap-2 p-3 bg-primary/10 border border-primary/30 rounded-lg">
               <AlertCircle className="w-4 h-4 text-primary mt-0.5" />
               <p className="text-xs text-muted-foreground">
-                Yeni kampanya eklemek için Facebook'a tekrar bağlanmanız gerekebilir.
+                You may need to reconnect to Facebook to add new campaigns.
               </p>
             </div>
           </div>
 
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowFilterDialog(false)}>
-              İptal
+              Cancel
             </Button>
             <Button onClick={handleUpdateFilters} disabled={loading}>
               {loading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
-              Güncelle
+              Update
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -955,11 +937,11 @@ export function FacebookConnectButton() {
           <div className="space-y-4 py-4">
             <Alert variant="destructive">
               <AlertCircle className="h-4 w-4" />
-              <AlertTitle>Ne Yapmalısınız?</AlertTitle>
+              <AlertTitle>What Should You Do?</AlertTitle>
               <AlertDescription className="space-y-2">
-                <p>1. <strong>Meta Business Suite</strong>'e gidin</p>
-                <p>2. İlgili sayfada <strong>admin/yönetici</strong> rolünüz olduğunu kontrol edin</p>
-                <p>3. Facebook &gt; Ayarlar &gt; Uygulamalar bölümünden bu uygulamanın izinlerini kontrol edin</p>
+                <p>1. Go to <strong>Meta Business Suite</strong></p>
+                <p>2. Verify that you have an <strong>admin</strong> role on the relevant page</p>
+                <p>3. Check this app's permissions under Facebook &gt; Settings &gt; Apps</p>
               </AlertDescription>
             </Alert>
 
@@ -967,7 +949,7 @@ export function FacebookConnectButton() {
               <div className="space-y-2">
                 {permissionInfo.granted.length > 0 && (
                   <div className="p-3 bg-success/10 rounded-lg">
-                    <p className="text-sm font-medium text-success mb-1">✓ Verilen İzinler</p>
+                    <p className="text-sm font-medium text-success mb-1">✓ Granted Permissions</p>
                     <div className="flex flex-wrap gap-1">
                       {permissionInfo.granted.map(p => (
                         <Badge key={p} variant="outline" className="text-xs text-success border-success">
@@ -980,7 +962,7 @@ export function FacebookConnectButton() {
 
                 {permissionInfo.missing.length > 0 && (
                   <div className="p-3 bg-destructive/10 rounded-lg">
-                    <p className="text-sm font-medium text-destructive mb-1">✗ Eksik İzinler</p>
+                    <p className="text-sm font-medium text-destructive mb-1">✗ Missing Permissions</p>
                     <div className="flex flex-wrap gap-1">
                       {permissionInfo.missing.map(p => (
                         <Badge key={p} variant="outline" className="text-xs text-destructive border-destructive">
@@ -993,7 +975,7 @@ export function FacebookConnectButton() {
 
                 {permissionInfo.declined.length > 0 && (
                   <div className="p-3 bg-destructive/10 rounded-lg">
-                    <p className="text-sm font-medium text-destructive mb-1">✗ Reddedilen İzinler</p>
+                    <p className="text-sm font-medium text-destructive mb-1">✗ Declined Permissions</p>
                     <div className="flex flex-wrap gap-1">
                       {permissionInfo.declined.map(p => (
                         <Badge key={p} variant="outline" className="text-xs text-destructive border-destructive">
@@ -1022,17 +1004,16 @@ export function FacebookConnectButton() {
               onClick={() => window.open(`https://www.facebook.com/settings?tab=applications&app_id=${FB_APP_ID}`, '_blank')}
             >
               <Settings2 className="w-4 h-4 mr-2" />
-              Uygulama İzinleri
+              App Permissions
             </Button>
             <Button 
               onClick={() => {
                 setShowPermissionError(false);
                 resetState();
-                // Trigger new login
                 handleFacebookLogin();
               }}
             >
-              Tekrar Dene
+              Try Again
             </Button>
           </DialogFooter>
         </DialogContent>
