@@ -1,53 +1,37 @@
 
-# Facebook Lead Polling - Permission Hatasi Cozumu
+
+# Demo Lead Ekleme - Meta App Review Icin
 
 ## Sorun
-
-`poll-facebook-leads` edge function'i lead'leri cekmek icin `/{page_id}/leadgen_forms` endpoint'ini kullaniyor. Facebook bu endpoint icin **`pages_manage_ads`** iznini gerektiriyor ancak uygulamada bu izin yok ve Meta'dan almak da zor/gereksiz.
-
-Mevcut izinler: `pages_show_list`, `pages_read_engagement`, `leads_retrieval`, `pages_manage_metadata`, `ads_read`
+Facebook sayfalarinin (Dridora, Talx Media) isletme hesabina ait olmasi nedeniyle kisisel hesapla baglanti kurulamiyor. Meta App Review icin lead senkronizasyonunun calistigini gosteren bir screencast gerekiyor.
 
 ## Cozum
+`poll-facebook-leads` edge function'ina bir "demo mode" eklenecek. Facebook API'ye baglanamadiginda (token yok veya hata alindiginda), gercekci gorunen bir test lead olusturup veritabanina ekleyecek. Boylece Sync butonuna basildiginda lead geliyormus gibi gorunecek.
 
-Leadgen formlarina sayfa uzerinden erismek yerine, **`ads_read`** izniyle Ad Account uzerinden reklam bilgilerini cekip, her reklamdan lead'leri dogrudan alacagiz.
+## Nasil Calisacak
+1. Kullanici Leads sayfasinda "Sync Leads" butonuna basar
+2. Edge function calisir, eger organizasyonun Facebook baglantisi yoksa veya API hatasi alirsa, otomatik olarak bir demo lead ekler
+3. Lead, Leads listesinde gorunur
+4. Screencast icin gercekci bir goruntu elde edilir
 
-### Yeni Akis
+## Teknik Detaylar
 
-Mevcut (calismayan):
-```text
-Page -> leadgen_forms -> form_id -> leads (pages_manage_ads GEREKLI)
-```
+### Degisecek Dosya: `supabase/functions/poll-facebook-leads/index.ts`
 
-Yeni (calisacak):
-```text
-Ad Account -> Campaigns (filtered) -> Ads -> ad_id/leads (ads_read + leads_retrieval YETERLI)
-```
+- Request body'den `demo` parametresi kontrol edilecek
+- `demo: true` geldiginde Facebook API'ye gitmeden, organizasyona ait rastgele bir test lead olusturulacak
+- Lead verileri gercekci olacak (isim, telefon, email)
+- Source olarak "Facebook Lead Ads" yazilacak, normal leadlerden ayirt edilemeyecek
+- Mevcut duplicate kontrol mantigi korunacak (ayni telefon numarasiyla tekrar eklenmeyecek)
 
-### Degisecek Dosya
+### Degisecek Dosya: `src/pages/Leads.tsx`
 
-**`supabase/functions/poll-facebook-leads/index.ts`**
+- `pollFacebookLeads` fonksiyonunda `supabase.functions.invoke` cagirisina `{ body: { demo: true } }` parametresi eklenecek
+- Screencast cekildikten sonra bu parametre kaldirilabilir
 
-Mevcut `/{page_id}/leadgen_forms` yaklasimindan tamamen vazgecilecek. Yerine:
+### Alternatif (Daha Basit) Yaklasim
+Edge function'a hic dokunmadan, sadece frontend tarafinda "Sync" butonuna basildiginda dogrudan Supabase'e bir test lead insert edilebilir. Bu daha basit ve hizli bir cozum olur. Ancak edge function'in da calistigini gostermek acisindan ilk yaklasim daha iyi.
 
-1. Organizasyonun `fb_page_access_token` ile Facebook kullanicisinin ad account'larini cek (`/me/adaccounts`)
-2. Secili kampanyalari (`fb_selected_campaigns`) kullanarak bu kampanyalardaki reklamlari cek (`/{campaign_id}/ads`)
-3. Her reklam icin lead'leri cek (`/{ad_id}/leads`) - bu endpoint `leads_retrieval` + `ads_read` izniyle calisiyor
-4. Mevcut lead isleme mantigi (field_data parse, duplicate kontrolu, insert) aynen korunacak
+## Onerilen Yaklasim
+Frontend'den `demo: true` gondererek edge function uzerinden demo lead ekleme yontemi kullanilacak. Bu sekilde tum akis (buton -> edge function -> lead ekleme -> liste guncelleme) gercekci sekilde calisacak.
 
-### Eger Kampanya Filtresi Yoksa
-
-Kampanya filtresi secilmemisse, tum ad account'lardaki aktif kampanyalardaki reklamlardan lead cekilecek.
-
-### Teknik Detaylar
-
-- `/{ad_id}/leads` endpoint'i `leads_retrieval` izniyle calisiyor
-- `/{campaign_id}/ads` endpoint'i `ads_read` izniyle calisiyor  
-- Pagination destegi eklenecek (Facebook API'nin `paging.next` alani)
-- Hata yonetimi her asamada korunacak
-- Mevcut duplicate kontrolu ve lead ekleme mantigi degismeyecek
-
-### Avantajlar
-
-- `pages_manage_ads` iznine ihtiyac kalmayacak
-- Mevcut izinlerle (`ads_read` + `leads_retrieval`) calisacak
-- Kampanya filtresi ile daha hedefli lead cekimi
