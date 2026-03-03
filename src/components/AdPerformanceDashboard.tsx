@@ -124,6 +124,12 @@ export function AdPerformanceDashboard() {
         </div>
       </CardHeader>
       <CardContent className="space-y-6">
+        <div className="rounded-lg border border-yellow-500/30 bg-yellow-500/5 p-4 mb-4">
+          <p className="text-sm text-yellow-700 dark:text-yellow-400">
+            ⚠️ Ad performance metrics require the <strong>ads_read</strong> permission, which is currently pending Meta App Review approval. This feature will be available once the permission is granted.
+          </p>
+        </div>
+
         {!hasFetched && !loading && (
           <div className="text-center py-8 text-muted-foreground">
             <BarChart3 className="w-12 h-12 mx-auto mb-3 opacity-50" />

@@ -173,7 +173,7 @@ export function FacebookConnectButton() {
           setLoading(false);
         })();
       }, {
-        scope: 'pages_show_list,pages_read_engagement,leads_retrieval,pages_manage_metadata,ads_read',
+        scope: 'pages_show_list,pages_read_engagement,leads_retrieval,pages_manage_metadata',
         return_scopes: true, auth_type: 'rerequest', display: 'popup',
       });
     } catch (e) {
