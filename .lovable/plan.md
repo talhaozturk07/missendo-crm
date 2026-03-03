@@ -1,38 +1,43 @@
 
 
-## ads_read Reddi - Analiz ve Çözüm Planı
+## Sorun Özeti
 
-### Sorun
-Meta reviewer, `ads_read` izni için gerçek reklam performans verilerinin (impressions, clicks, reach, spend, conversions) Facebook API'den çekilip CRM dashboard'unda gösterilmesini istiyor. Şu anki uygulama `ads_read` iznini sadece kampanya/adset filtreleme için kullanıyor, performans metrikleri gösterilmiyor.
+1. **`fb_ad_account_id` hiçbir zaman kaydedilmiyor** — `connect` action'ında sayfa bağlanırken reklam hesabı tespit edilip DB'ye yazılmıyor
+2. **`campaigns` action'ı tüm ad account'ları döndürüyor** — sayfa ile ilişkili olanı filtrelemiyor
+3. **Ad Performance dashboard tüm hesapların verilerini gösteriyor** — çünkü `fb_ad_account_id` NULL
 
-### Çözüm
-CRM'e bir **Ad Performance Dashboard** bölümü eklenecek. Bu bölüm Facebook Graph API'den kampanya performans verilerini çekip görsel olarak gösterecek.
+## Plan
 
-### Yapılacaklar
+### 1. `facebook-oauth` edge function — `connect` action'ına ad account tespiti ekleme
 
-**1. Yeni Edge Function: `fetch-ad-insights`**
-- Facebook Graph API v21.0 üzerinden `/act_{ad_account_id}/insights` endpoint'ini çağıracak
-- Metrikleri çekecek: impressions, clicks, reach, spend, conversions, cpc, ctr
-- Kampanya bazında breakdown yapacak
-- Organizasyonun `fb_page_access_token` bilgisini kullanacak
+Sayfa bağlantısı sırasında:
+- `me/adaccounts` endpoint'inden kullanıcının tüm ad account'larını çek
+- Her ad account için `/{ad_account_id}/campaigns` sorgusu yap ve seçilen sayfanın ID'siyle ilişkili olanı bul (veya `/{page_id}?fields=promotable_ads` ya da page'in `promotion_eligible` ad account'unu kullan)
+- Alternatif ve daha basit yol: Bağlantı akışında kullanıcıya **ad account seçtir** (sayfa seçiminden sonra, kampanya seçiminden önce)
+- Seçilen `fb_ad_account_id`'yi DB'ye kaydet
 
-**2. Settings veya Dashboard sayfasına "Ad Performance" bölümü ekleme**
-- Kampanya listesi ve her kampanyanın performans metrikleri (tablo veya kartlar)
-- Impressions, Clicks, Reach, Spend, Conversions, CTR, CPC kolonları
-- Gerçek veriler Facebook API'den gelecek
-- Recharts ile basit grafikler eklenebilir (opsiyonel ama screencast için etkileyici olur)
+### 2. `facebook-oauth` — `campaigns` action'ını filtreleme
 
-**3. Screencast akışı**
-Yeni video şunları göstermeli:
-1. CRM'e giriş
-2. Meta login flow (Connect with Facebook)
-3. İzinleri onayla
-4. Ad Performance bölümüne git
-5. Gerçek kampanya verileri (impressions, clicks, spend vs.) yükleniyor ve dashboard'da görünüyor
+- Şu an `me/adaccounts` ile tüm hesapları çekip tümünün kampanyalarını listeliyor
+- Bağlantı akışında ad account seçildikten sonra, sadece o hesabın kampanyalarını göster
+- Eğer `fb_ad_account_id` zaten DB'de varsa (filter dialog), sadece o hesabı kullan
 
-### Önemli Not
-Bu özelliğin çalışması için Facebook'ta **aktif reklam kampanyalarına** sahip bir ad account'a erişim gerekiyor. Screencast çekerken gerçek veri gösteren bir hesap kullanılmalı.
+### 3. Frontend — Ad Account seçim adımı ekleme
 
-### Alternatif: ads_read'den vazgeçme
-Eğer reklam performans verilerini göstermeye gerek yoksa ve sadece lead filtreleme yeterliyse, `ads_read` izninden vazgeçilebilir. Kampanya/adset filtreleme `leads_retrieval` ile de kısmen yapılabilir. Ancak detaylı filtreleme için `ads_read` gerekli.
+`FacebookConnectButton.tsx`'te sayfa seçiminden sonra, kampanya seçiminden önce bir **ad account seçim adımı** ekle:
+- `me/adaccounts` sonucunu listele (id + name)
+- Kullanıcı birini seçsin
+- Seçim sonrası kampanyalar sadece o hesaptan çekilsin
+- Eğer sadece 1 ad account varsa otomatik seç
+
+### 4. `fetch-ad-insights` — Mevcut mantık zaten doğru
+
+Bu function zaten `fb_ad_account_id` kullanıyor. Sorun sadece bu alanın NULL olması. Yukarıdaki değişikliklerle otomatik düzelecek.
+
+### Teknik Detaylar
+
+- Yeni Facebook Graph API endpoint: `GET /v21.0/me/adaccounts?fields=id,name,account_id`
+- `facebook-oauth` edge function'a yeni action: `adaccounts` (ad account listesi döndürür)
+- DB update: `connect` action'ında `fb_ad_account_id` alanını set et
+- Frontend: Sayfa → Ad Account → Kampanya → Bağlantı tamamla akışı
 
