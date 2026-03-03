@@ -231,49 +231,54 @@ serve(async (req: Request) => {
         }
 
         // Step 4: Also poll page-level leads to catch test leads and leads not tied to ads
-        console.log(`Polling page-level leads for ${org.name} (page: ${org.fb_page_id})...`);
-        try {
-          const pageLeads = await fetchAllPages<FacebookLead>(
-            `${FB_BASE}/${org.fb_page_id}/leads?access_token=${pageToken}&fields=id,created_time,field_data,ad_id,adset_id,campaign_id&limit=100`
-          );
-          console.log(`Page-level: found ${pageLeads.length} leads for ${org.name}`);
+        // BUT only if no campaign filter is set — otherwise we'd pull in unrelated leads
+        if (selectedCampaignIds.length === 0) {
+          console.log(`Polling page-level leads for ${org.name} (page: ${org.fb_page_id}) — no campaign filter, fetching all...`);
+          try {
+            const pageLeads = await fetchAllPages<FacebookLead>(
+              `${FB_BASE}/${org.fb_page_id}/leads?access_token=${pageToken}&fields=id,created_time,field_data,ad_id,adset_id,campaign_id&limit=100`
+            );
+            console.log(`Page-level: found ${pageLeads.length} leads for ${org.name}`);
 
-          for (const lead of pageLeads) {
-            const { firstName, lastName, phone, email, country } = parseLeadFields(lead.field_data || []);
-            if (!phone) continue;
+            for (const lead of pageLeads) {
+              const { firstName, lastName, phone, email, country } = parseLeadFields(lead.field_data || []);
+              if (!phone) continue;
 
-            const normalizedPhone = phone.replace(/[\s\-\(\)]/g, "");
-            const { data: existingLead } = await supabase
-              .from("leads")
-              .select("id")
-              .eq("organization_id", org.id)
-              .eq("phone", normalizedPhone)
-              .maybeSingle();
+              const normalizedPhone = phone.replace(/[\s\-\(\)]/g, "");
+              const { data: existingLead } = await supabase
+                .from("leads")
+                .select("id")
+                .eq("organization_id", org.id)
+                .eq("phone", normalizedPhone)
+                .maybeSingle();
 
-            if (existingLead) continue;
+              if (existingLead) continue;
 
-            const { error: insertError } = await supabase.from("leads").insert({
-              first_name: firstName || "Unknown",
-              last_name: lastName || "",
-              phone: normalizedPhone,
-              email: email || null,
-              country: country || null,
-              organization_id: org.id,
-              source: "Facebook Lead Ads",
-              status: "new",
-              notes: `Facebook Lead ID: ${lead.id} (page-level)`,
-            });
+              const { error: insertError } = await supabase.from("leads").insert({
+                first_name: firstName || "Unknown",
+                last_name: lastName || "",
+                phone: normalizedPhone,
+                email: email || null,
+                country: country || null,
+                organization_id: org.id,
+                source: "Facebook Lead Ads",
+                status: "new",
+                notes: `Facebook Lead ID: ${lead.id} (page-level)`,
+              });
 
-            if (insertError) {
-              console.error(`Error inserting page-level lead:`, insertError);
-            } else {
-              console.log(`New page-level lead: ${firstName} ${lastName} (${normalizedPhone})`);
-              orgNewLeads++;
-              totalNewLeads++;
+              if (insertError) {
+                console.error(`Error inserting page-level lead:`, insertError);
+              } else {
+                console.log(`New page-level lead: ${firstName} ${lastName} (${normalizedPhone})`);
+                orgNewLeads++;
+                totalNewLeads++;
+              }
             }
+          } catch (pageErr) {
+            console.error(`Error polling page-level leads for ${org.name}:`, pageErr);
           }
-        } catch (pageErr) {
-          console.error(`Error polling page-level leads for ${org.name}:`, pageErr);
+        } else {
+          console.log(`Skipping page-level polling for ${org.name} — campaign filter active (${selectedCampaignIds.length} campaigns selected)`);
         }
 
         results.push({ org: org.name, newLeads: orgNewLeads });
