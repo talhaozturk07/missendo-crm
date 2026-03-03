@@ -32,6 +32,7 @@ import {
 import { Plus, Search, Phone, Mail, MapPin, UserPlus, RefreshCw, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
+import { ColumnFilter } from '@/components/ColumnFilter';
 
 interface Lead {
   id: string;
@@ -73,6 +74,10 @@ export default function Leads() {
   const [organizations, setOrganizations] = useState<Organization[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
+  const [statusFilter, setStatusFilter] = useState<string[]>([]);
+  const [clinicFilter, setClinicFilter] = useState<string[]>([]);
+  const [sourceFilter, setSourceFilter] = useState<string[]>([]);
+  const [countryFilter, setCountryFilter] = useState<string[]>([]);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
   const [isConverting, setIsConverting] = useState(false);
@@ -346,11 +351,25 @@ export default function Leads() {
     }
   };
 
-  const filteredLeads = leads.filter(lead =>
-    `${lead.first_name} ${lead.last_name} ${lead.email} ${lead.phone}`
+  // Derive filter options from loaded data
+  const statusOptions = [...new Set(leads.map(l => l.status))].map(s => ({ value: s, label: s.replace(/_/g, ' ') }));
+  const clinicOptions = [...new Set(leads.map(l => l.organization_id))].map(id => ({
+    value: id,
+    label: organizations.find(o => o.id === id)?.name || id,
+  }));
+  const sourceOptions = [...new Set(leads.map(l => l.source).filter(Boolean))].map(s => ({ value: s!, label: s! }));
+  const countryOptions = [...new Set(leads.map(l => l.country).filter(Boolean))].map(c => ({ value: c!, label: c! }));
+
+  const filteredLeads = leads.filter(lead => {
+    const matchesSearch = `${lead.first_name} ${lead.last_name} ${lead.email} ${lead.phone}`
       .toLowerCase()
-      .includes(searchQuery.toLowerCase())
-  );
+      .includes(searchQuery.toLowerCase());
+    const matchesStatus = statusFilter.length === 0 || statusFilter.includes(lead.status);
+    const matchesClinic = clinicFilter.length === 0 || clinicFilter.includes(lead.organization_id);
+    const matchesSource = sourceFilter.length === 0 || (lead.source && sourceFilter.includes(lead.source));
+    const matchesCountry = countryFilter.length === 0 || (lead.country && countryFilter.includes(lead.country));
+    return matchesSearch && matchesStatus && matchesClinic && matchesSource && matchesCountry;
+  });
 
   return (
     <Layout>
@@ -593,9 +612,18 @@ export default function Leads() {
               <TableRow>
                 <TableHead>Name</TableHead>
                 <TableHead>Contact</TableHead>
-                <TableHead>Location</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Clinic</TableHead>
+                <TableHead>
+                  <ColumnFilter title="Location" options={countryOptions} selectedValues={countryFilter} onFilterChange={setCountryFilter} />
+                </TableHead>
+                <TableHead>
+                  <ColumnFilter title="Status" options={statusOptions} selectedValues={statusFilter} onFilterChange={setStatusFilter} />
+                </TableHead>
+                <TableHead>
+                  <ColumnFilter title="Clinic" options={clinicOptions} selectedValues={clinicFilter} onFilterChange={setClinicFilter} />
+                </TableHead>
+                <TableHead>
+                  <ColumnFilter title="Source" options={sourceOptions} selectedValues={sourceFilter} onFilterChange={setSourceFilter} />
+                </TableHead>
                 <TableHead>Date</TableHead>
                 <TableHead>Actions</TableHead>
               </TableRow>
@@ -603,13 +631,13 @@ export default function Leads() {
             <TableBody>
               {loading ? (
                 <TableRow>
-                  <TableCell colSpan={7} className="text-center py-8">
+                  <TableCell colSpan={9} className="text-center py-8">
                     Loading leads...
                   </TableCell>
                 </TableRow>
               ) : filteredLeads.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
+                  <TableCell colSpan={9} className="text-center py-8 text-muted-foreground">
                     No leads found
                   </TableCell>
                 </TableRow>
@@ -648,6 +676,9 @@ export default function Leads() {
                     </TableCell>
                     <TableCell className="text-sm">
                       {organizations.find(org => org.id === lead.organization_id)?.name || '-'}
+                    </TableCell>
+                    <TableCell className="text-sm text-muted-foreground">
+                      {lead.source || '-'}
                     </TableCell>
                     <TableCell className="text-sm text-muted-foreground">
                       {format(new Date(lead.created_at), 'MMM dd, yyyy')}
