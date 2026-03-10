@@ -522,6 +522,13 @@ export default function Meetings() {
                       )}
                     </TableCell>
                     <TableCell>{m.city || '-'}</TableCell>
+                    <TableCell className="max-w-[150px]">
+                      {m.address ? (
+                        <span className="text-sm line-clamp-2">{m.address}</span>
+                      ) : (
+                        <span className="text-xs text-muted-foreground">-</span>
+                      )}
+                    </TableCell>
                     <TableCell>
                       {m.result && (
                         <Badge variant="secondary" className={resultColors[m.result]}>
