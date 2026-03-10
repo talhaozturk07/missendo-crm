@@ -488,6 +488,7 @@ export default function Meetings() {
                 <TableHead><SortHeader field="business_name" label="Business" /></TableHead>
                 <TableHead><SortHeader field="contact_name" label="Contact" /></TableHead>
                 <TableHead><SortHeader field="city" label="City" /></TableHead>
+                <TableHead>Address</TableHead>
                 <TableHead><SortHeader field="result" label="Result" /></TableHead>
                 <TableHead>Notes</TableHead>
                 <TableHead>Created By</TableHead>
@@ -497,13 +498,13 @@ export default function Meetings() {
             <TableBody>
               {isLoading ? (
                 <TableRow>
-                   <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
+                   <TableCell colSpan={9} className="text-center py-8 text-muted-foreground">
                     Loading...
                   </TableCell>
                 </TableRow>
               ) : filtered.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
+                  <TableCell colSpan={9} className="text-center py-8 text-muted-foreground">
                     No meetings found
                   </TableCell>
                 </TableRow>
@@ -521,6 +522,13 @@ export default function Meetings() {
                       )}
                     </TableCell>
                     <TableCell>{m.city || '-'}</TableCell>
+                    <TableCell className="max-w-[150px]">
+                      {m.address ? (
+                        <span className="text-sm line-clamp-2">{m.address}</span>
+                      ) : (
+                        <span className="text-xs text-muted-foreground">-</span>
+                      )}
+                    </TableCell>
                     <TableCell>
                       {m.result && (
                         <Badge variant="secondary" className={resultColors[m.result]}>
