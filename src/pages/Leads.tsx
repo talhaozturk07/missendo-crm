@@ -100,7 +100,7 @@ export default function Leads() {
   const [isPolling, setIsPolling] = useState(false);
   const [noteEditLead, setNoteEditLead] = useState<string | null>(null);
   const [noteEditValue, setNoteEditValue] = useState('');
-  const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const pollingIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const { toast } = useToast();
 
   const [formData, setFormData] = useState({
