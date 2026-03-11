@@ -59,23 +59,23 @@ interface Lead {
 }
 
 const statusConfig: Record<string, { label: string; color: string }> = {
-  new: { label: 'Yeni', color: 'bg-blue-100 text-blue-800 border-blue-200' },
-  contacted: { label: 'Ulaşıldı', color: 'bg-green-100 text-green-800 border-green-200' },
-  no_contact: { label: 'Ulaşılamadı', color: 'bg-yellow-100 text-yellow-800 border-yellow-200' },
-  appointment_scheduled: { label: 'Onaylandı', color: 'bg-emerald-100 text-emerald-800 border-emerald-200' },
-  converted: { label: 'Dönüştürüldü', color: 'bg-purple-100 text-purple-800 border-purple-200' },
-  converted_to_patient: { label: 'Hasta Oldu', color: 'bg-purple-100 text-purple-800 border-purple-200' },
-  rejected: { label: 'Kayıp', color: 'bg-red-100 text-red-800 border-red-200' },
-  will_not_come: { label: 'Gelmeyecek', color: 'bg-red-100 text-red-800 border-red-200' },
+  new: { label: 'New', color: 'bg-blue-100 text-blue-800 border-blue-200' },
+  contacted: { label: 'Contacted', color: 'bg-green-100 text-green-800 border-green-200' },
+  no_contact: { label: 'No Contact', color: 'bg-yellow-100 text-yellow-800 border-yellow-200' },
+  appointment_scheduled: { label: 'Confirmed', color: 'bg-emerald-100 text-emerald-800 border-emerald-200' },
+  converted: { label: 'Converted', color: 'bg-purple-100 text-purple-800 border-purple-200' },
+  converted_to_patient: { label: 'Became Patient', color: 'bg-purple-100 text-purple-800 border-purple-200' },
+  rejected: { label: 'Lost', color: 'bg-red-100 text-red-800 border-red-200' },
+  will_not_come: { label: 'Will Not Come', color: 'bg-red-100 text-red-800 border-red-200' },
 };
 
 const editableStatuses = [
-  { value: 'new', label: 'Yeni' },
-  { value: 'contacted', label: 'Ulaşıldı' },
-  { value: 'no_contact', label: 'Ulaşılamadı' },
-  { value: 'appointment_scheduled', label: 'Onaylandı' },
-  { value: 'rejected', label: 'Kayıp' },
-  { value: 'will_not_come', label: 'Gelmeyecek' },
+  { value: 'new', label: 'New' },
+  { value: 'contacted', label: 'Contacted' },
+  { value: 'no_contact', label: 'No Contact' },
+  { value: 'appointment_scheduled', label: 'Confirmed' },
+  { value: 'rejected', label: 'Lost' },
+  { value: 'will_not_come', label: 'Will Not Come' },
 ];
 
 interface Organization {
