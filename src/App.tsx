@@ -201,6 +201,14 @@ const App = () => (
                 </ProtectedRoute>
               }
             />
+            <Route
+              path="/media"
+              element={
+                <ProtectedRoute>
+                  <Media />
+                </ProtectedRoute>
+              }
+            />
              {/* Public Legal Pages */}
              <Route path="/legal/privacy-policy" element={<PrivacyPolicy />} />
              <Route path="/legal/terms" element={<Terms />} />
