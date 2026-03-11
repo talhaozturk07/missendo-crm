@@ -529,12 +529,12 @@ export default function Leads() {
 
                 {isSuperAdmin && (
                   <div className="space-y-2">
-                    <Label htmlFor="organization_id">Organizasyona Ata</Label>
+                    <Label htmlFor="organization_id">Assign to Organization</Label>
                     {selectedLead ? (
                       <div className="space-y-1">
                         <Select value={formData.organization_id} disabled>
                           <SelectTrigger className="opacity-60">
-                            <SelectValue placeholder="Organizasyon seçin" />
+                            <SelectValue placeholder="Select organization" />
                           </SelectTrigger>
                           <SelectContent>
                             {organizations.map((org) => (
