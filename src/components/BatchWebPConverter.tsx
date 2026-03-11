@@ -14,7 +14,7 @@ interface FileEntry {
   name: string;
 }
 
-const IMAGE_BUCKETS = ['patient-photos', 'avatars', 'email-assets'];
+const IMAGE_BUCKETS = ['patient-photos', 'patient-documents', 'avatars', 'email-assets', 'treatment-plans'];
 const IMAGE_EXTENSIONS = ['.jpg', '.jpeg', '.png', '.bmp', '.tiff', '.tif', '.gif'];
 
 export function BatchWebPConverter() {
@@ -59,12 +59,16 @@ export function BatchWebPConverter() {
       limit: 1000,
       sortBy: { column: 'name', order: 'asc' },
     });
-    if (error || !data) return;
+    if (error || !data) {
+      console.warn(`Failed to scan ${bucket}/${prefix}:`, error);
+      return;
+    }
 
     for (const item of data) {
       const fullPath = prefix ? `${prefix}/${item.name}` : item.name;
-      if (item.id === null) {
-        // it's a folder
+      // Folders have no id or null id and no metadata
+      const isFolder = !item.id || item.id === null || (!item.metadata && item.name && !item.name.includes('.'));
+      if (isFolder) {
         await scanBucket(bucket, fullPath, found);
       } else if (isImageFile(item.name)) {
         found.push({ bucket, path: fullPath, name: item.name });
