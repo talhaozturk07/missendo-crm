@@ -234,7 +234,7 @@ export default function Media() {
           <div>
             <h1 className="text-2xl font-bold text-foreground">Media Gallery</h1>
             <p className="text-sm text-muted-foreground mt-1">
-              Tüm hasta fotoğraf ve belgeleri ({documents.length} dosya)
+              All patient photos and documents ({documents.length} files)
             </p>
           </div>
         </div>
