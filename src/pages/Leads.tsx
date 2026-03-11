@@ -627,7 +627,7 @@ export default function Leads() {
                 )}
 
                 <div className="space-y-2">
-                  <Label htmlFor="notes">Notlar</Label>
+                  <Label htmlFor="notes">Notes</Label>
                   <Textarea
                     id="notes"
                     value={formData.notes}
@@ -638,10 +638,10 @@ export default function Leads() {
 
                 <div className="flex justify-end gap-2">
                   <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)}>
-                    İptal
+                    Cancel
                   </Button>
                   <Button type="submit">
-                    {selectedLead ? 'Güncelle' : 'Oluştur'}
+                    {selectedLead ? 'Update' : 'Create'}
                   </Button>
                 </div>
               </form>
