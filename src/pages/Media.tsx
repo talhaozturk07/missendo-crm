@@ -254,11 +254,11 @@ export default function Media() {
           <TabsList>
             <TabsTrigger value="photos" className="gap-2">
               <Image className="h-4 w-4" />
-              Fotoğraflar ({filteredPhotos.length})
+              Photos ({filteredPhotos.length})
             </TabsTrigger>
             <TabsTrigger value="documents" className="gap-2">
               <FileText className="h-4 w-4" />
-              Belgeler ({filteredDocs.length})
+              Documents ({filteredDocs.length})
             </TabsTrigger>
           </TabsList>
 
