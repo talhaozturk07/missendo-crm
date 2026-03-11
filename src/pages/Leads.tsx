@@ -590,7 +590,7 @@ export default function Leads() {
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label>Hasta gelecek mi?</Label>
+                      <Label>Will the patient come?</Label>
                       <div className="flex gap-4">
                         <label className="flex items-center gap-2">
                           <input
@@ -598,7 +598,7 @@ export default function Leads() {
                             checked={formData.will_come === true}
                             onChange={() => setFormData({ ...formData, will_come: true, will_not_come_reason: '' })}
                           />
-                          <span>Evet</span>
+                          <span>Yes</span>
                         </label>
                         <label className="flex items-center gap-2">
                           <input
@@ -606,7 +606,7 @@ export default function Leads() {
                             checked={formData.will_come === false}
                             onChange={() => setFormData({ ...formData, will_come: false })}
                           />
-                          <span>Hayır</span>
+                          <span>No</span>
                         </label>
                       </div>
                     </div>
