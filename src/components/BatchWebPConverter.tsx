@@ -14,7 +14,7 @@ interface FileEntry {
   name: string;
 }
 
-const IMAGE_BUCKETS = ['patient-photos', 'avatars', 'email-assets'];
+const IMAGE_BUCKETS = ['patient-photos', 'patient-documents', 'avatars', 'email-assets', 'treatment-plans'];
 const IMAGE_EXTENSIONS = ['.jpg', '.jpeg', '.png', '.bmp', '.tiff', '.tif', '.gif'];
 
 export function BatchWebPConverter() {
