@@ -517,10 +517,10 @@ export default function Leads() {
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="source">Kaynak</Label>
+                    <Label htmlFor="source">Source</Label>
                     <Input
                       id="source"
-                      placeholder="ör. Facebook Ads, Google"
+                      placeholder="e.g. Facebook Ads, Google"
                       value={formData.source}
                       onChange={(e) => setFormData({ ...formData, source: e.target.value })}
                     />
