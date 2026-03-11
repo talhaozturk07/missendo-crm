@@ -59,23 +59,23 @@ interface Lead {
 }
 
 const statusConfig: Record<string, { label: string; color: string }> = {
-  new: { label: 'Yeni', color: 'bg-blue-100 text-blue-800 border-blue-200' },
-  contacted: { label: 'Ulaşıldı', color: 'bg-green-100 text-green-800 border-green-200' },
-  no_contact: { label: 'Ulaşılamadı', color: 'bg-yellow-100 text-yellow-800 border-yellow-200' },
-  appointment_scheduled: { label: 'Onaylandı', color: 'bg-emerald-100 text-emerald-800 border-emerald-200' },
-  converted: { label: 'Dönüştürüldü', color: 'bg-purple-100 text-purple-800 border-purple-200' },
-  converted_to_patient: { label: 'Hasta Oldu', color: 'bg-purple-100 text-purple-800 border-purple-200' },
-  rejected: { label: 'Kayıp', color: 'bg-red-100 text-red-800 border-red-200' },
-  will_not_come: { label: 'Gelmeyecek', color: 'bg-red-100 text-red-800 border-red-200' },
+  new: { label: 'New', color: 'bg-blue-100 text-blue-800 border-blue-200' },
+  contacted: { label: 'Contacted', color: 'bg-green-100 text-green-800 border-green-200' },
+  no_contact: { label: 'No Contact', color: 'bg-yellow-100 text-yellow-800 border-yellow-200' },
+  appointment_scheduled: { label: 'Confirmed', color: 'bg-emerald-100 text-emerald-800 border-emerald-200' },
+  converted: { label: 'Converted', color: 'bg-purple-100 text-purple-800 border-purple-200' },
+  converted_to_patient: { label: 'Became Patient', color: 'bg-purple-100 text-purple-800 border-purple-200' },
+  rejected: { label: 'Lost', color: 'bg-red-100 text-red-800 border-red-200' },
+  will_not_come: { label: 'Will Not Come', color: 'bg-red-100 text-red-800 border-red-200' },
 };
 
 const editableStatuses = [
-  { value: 'new', label: 'Yeni' },
-  { value: 'contacted', label: 'Ulaşıldı' },
-  { value: 'no_contact', label: 'Ulaşılamadı' },
-  { value: 'appointment_scheduled', label: 'Onaylandı' },
-  { value: 'rejected', label: 'Kayıp' },
-  { value: 'will_not_come', label: 'Gelmeyecek' },
+  { value: 'new', label: 'New' },
+  { value: 'contacted', label: 'Contacted' },
+  { value: 'no_contact', label: 'No Contact' },
+  { value: 'appointment_scheduled', label: 'Confirmed' },
+  { value: 'rejected', label: 'Lost' },
+  { value: 'will_not_come', label: 'Will Not Come' },
 ];
 
 interface Organization {
@@ -223,10 +223,10 @@ export default function Leads() {
       if (error) throw error;
 
       setLeads(prev => prev.map(l => l.id === leadId ? { ...l, status: newStatus } : l));
-      toast({ title: "Durum güncellendi" });
+      toast({ title: "Status updated" });
     } catch (error) {
       console.error('Error updating status:', error);
-      toast({ title: "Hata", description: "Durum güncellenemedi", variant: "destructive" });
+      toast({ title: "Error", description: "Failed to update status", variant: "destructive" });
     }
   };
 
@@ -241,10 +241,10 @@ export default function Leads() {
 
       setLeads(prev => prev.map(l => l.id === leadId ? { ...l, notes: noteEditValue || null } : l));
       setNoteEditLead(null);
-      toast({ title: "Not kaydedildi" });
+      toast({ title: "Note saved" });
     } catch (error) {
       console.error('Error saving note:', error);
-      toast({ title: "Hata", description: "Not kaydedilemedi", variant: "destructive" });
+      toast({ title: "Error", description: "Failed to save note", variant: "destructive" });
     }
   };
 
@@ -286,13 +286,13 @@ export default function Leads() {
 
         if (error) throw error;
         
-        toast({ title: "Lead güncellendi" });
+        toast({ title: "Lead updated" });
       } else {
         const { error } = await supabase.from('leads').insert([leadData]);
 
         if (error) throw error;
         
-        toast({ title: "Lead oluşturuldu" });
+        toast({ title: "Lead created" });
       }
 
       setIsDialogOpen(false);
@@ -376,8 +376,8 @@ export default function Leads() {
       if (leadError) throw leadError;
 
       toast({
-        title: "Başarılı",
-        description: `${lead.first_name} ${lead.last_name} hastaya dönüştürüldü`,
+        title: "Success",
+        description: `${lead.first_name} ${lead.last_name} converted to patient`,
       });
 
       loadLeads();
@@ -398,7 +398,7 @@ export default function Leads() {
     try {
       const { error } = await supabase.from('leads').delete().eq('id', deleteTarget.id);
       if (error) throw error;
-      toast({ title: "Lead silindi" });
+      toast({ title: "Lead deleted" });
       setDeleteTarget(null);
       loadLeads();
     } catch (error) {
@@ -436,8 +436,8 @@ export default function Leads() {
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
           <div>
-            <h1 className="text-2xl md:text-3xl font-bold">Lead Yönetimi</h1>
-            <p className="text-sm md:text-base text-muted-foreground mt-1 md:mt-2">Potansiyel hastalarınızı takip edin ve yönetin</p>
+            <h1 className="text-2xl md:text-3xl font-bold">Lead Management</h1>
+            <p className="text-sm md:text-base text-muted-foreground mt-1 md:mt-2">Track and manage your potential patients</p>
           </div>
           <div className="flex gap-2 w-full sm:w-auto">
             <Button 
@@ -451,23 +451,23 @@ export default function Leads() {
               ) : (
                 <RefreshCw className="w-4 h-4 mr-2" />
               )}
-              {isPolling ? 'Senkronize ediliyor...' : 'Lead Senkronize Et'}
+              {isPolling ? 'Syncing...' : 'Sync Leads'}
             </Button>
             <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
               <DialogTrigger asChild>
                 <Button onClick={resetForm} className="flex-1 sm:flex-none">
                   <Plus className="w-4 h-4 mr-2" />
-                  Lead Ekle
+                  Add Lead
                 </Button>
               </DialogTrigger>
             <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
               <DialogHeader>
-                <DialogTitle>{selectedLead ? 'Lead Düzenle' : 'Yeni Lead Ekle'}</DialogTitle>
+                <DialogTitle>{selectedLead ? 'Edit Lead' : 'Add New Lead'}</DialogTitle>
               </DialogHeader>
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="first_name">Ad *</Label>
+                    <Label htmlFor="first_name">First Name *</Label>
                     <Input
                       id="first_name"
                       value={formData.first_name}
@@ -476,7 +476,7 @@ export default function Leads() {
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="last_name">Soyad *</Label>
+                    <Label htmlFor="last_name">Last Name *</Label>
                     <Input
                       id="last_name"
                       value={formData.last_name}
@@ -488,7 +488,7 @@ export default function Leads() {
 
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="email">E-posta</Label>
+                    <Label htmlFor="email">Email</Label>
                     <Input
                       id="email"
                       type="email"
@@ -497,7 +497,7 @@ export default function Leads() {
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="phone">Telefon *</Label>
+                    <Label htmlFor="phone">Phone *</Label>
                     <Input
                       id="phone"
                       value={formData.phone}
@@ -509,7 +509,7 @@ export default function Leads() {
 
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="country">Ülke</Label>
+                    <Label htmlFor="country">Country</Label>
                     <Input
                       id="country"
                       value={formData.country}
@@ -517,10 +517,10 @@ export default function Leads() {
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="source">Kaynak</Label>
+                    <Label htmlFor="source">Source</Label>
                     <Input
                       id="source"
-                      placeholder="ör. Facebook Ads, Google"
+                      placeholder="e.g. Facebook Ads, Google"
                       value={formData.source}
                       onChange={(e) => setFormData({ ...formData, source: e.target.value })}
                     />
@@ -529,12 +529,12 @@ export default function Leads() {
 
                 {isSuperAdmin && (
                   <div className="space-y-2">
-                    <Label htmlFor="organization_id">Organizasyona Ata</Label>
+                    <Label htmlFor="organization_id">Assign to Organization</Label>
                     {selectedLead ? (
                       <div className="space-y-1">
                         <Select value={formData.organization_id} disabled>
                           <SelectTrigger className="opacity-60">
-                            <SelectValue placeholder="Organizasyon seçin" />
+                            <SelectValue placeholder="Select organization" />
                           </SelectTrigger>
                           <SelectContent>
                             {organizations.map((org) => (
@@ -544,12 +544,12 @@ export default function Leads() {
                             ))}
                           </SelectContent>
                         </Select>
-                        <p className="text-xs text-muted-foreground">Mevcut lead'lerde organizasyon değiştirilemez</p>
+                        <p className="text-xs text-muted-foreground">Organization cannot be changed for existing leads</p>
                       </div>
                     ) : (
                       <Select value={formData.organization_id} onValueChange={(value) => setFormData({ ...formData, organization_id: value })}>
                         <SelectTrigger>
-                          <SelectValue placeholder="Organizasyon seçin" />
+                          <SelectValue placeholder="Select organization" />
                         </SelectTrigger>
                         <SelectContent>
                           {organizations.map((org) => (
@@ -564,7 +564,7 @@ export default function Leads() {
                 )}
 
                 <div className="space-y-2">
-                  <Label htmlFor="status">Durum</Label>
+                  <Label htmlFor="status">Status</Label>
                   <Select value={formData.status} onValueChange={(value: any) => setFormData({ ...formData, status: value })}>
                     <SelectTrigger>
                       <SelectValue />
@@ -573,7 +573,7 @@ export default function Leads() {
                       {editableStatuses.map(s => (
                         <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>
                       ))}
-                      <SelectItem value="converted_to_patient">Hasta Oldu</SelectItem>
+                      <SelectItem value="converted_to_patient">Became Patient</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -581,7 +581,7 @@ export default function Leads() {
                 {(formData.status === 'appointment_scheduled' || formData.status === 'converted_to_patient') && (
                   <>
                     <div className="space-y-2">
-                      <Label htmlFor="appointment_scheduled_date">Randevu Tarihi</Label>
+                      <Label htmlFor="appointment_scheduled_date">Appointment Date</Label>
                       <Input
                         id="appointment_scheduled_date"
                         type="date"
@@ -590,7 +590,7 @@ export default function Leads() {
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label>Hasta gelecek mi?</Label>
+                      <Label>Will the patient come?</Label>
                       <div className="flex gap-4">
                         <label className="flex items-center gap-2">
                           <input
@@ -598,7 +598,7 @@ export default function Leads() {
                             checked={formData.will_come === true}
                             onChange={() => setFormData({ ...formData, will_come: true, will_not_come_reason: '' })}
                           />
-                          <span>Evet</span>
+                          <span>Yes</span>
                         </label>
                         <label className="flex items-center gap-2">
                           <input
@@ -606,7 +606,7 @@ export default function Leads() {
                             checked={formData.will_come === false}
                             onChange={() => setFormData({ ...formData, will_come: false })}
                           />
-                          <span>Hayır</span>
+                          <span>No</span>
                         </label>
                       </div>
                     </div>
@@ -615,19 +615,19 @@ export default function Leads() {
 
                 {formData.will_come === false && (
                   <div className="space-y-2">
-                    <Label htmlFor="will_not_come_reason">Gelmeme Sebebi</Label>
+                    <Label htmlFor="will_not_come_reason">Reason for Not Coming</Label>
                     <Textarea
                       id="will_not_come_reason"
                       value={formData.will_not_come_reason}
                       onChange={(e) => setFormData({ ...formData, will_not_come_reason: e.target.value })}
-                      placeholder="Hastanın gelmeme sebebini girin"
+                      placeholder="Enter the reason the patient won't come"
                       rows={3}
                     />
                   </div>
                 )}
 
                 <div className="space-y-2">
-                  <Label htmlFor="notes">Notlar</Label>
+                  <Label htmlFor="notes">Notes</Label>
                   <Textarea
                     id="notes"
                     value={formData.notes}
@@ -638,10 +638,10 @@ export default function Leads() {
 
                 <div className="flex justify-end gap-2">
                   <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)}>
-                    İptal
+                    Cancel
                   </Button>
                   <Button type="submit">
-                    {selectedLead ? 'Güncelle' : 'Oluştur'}
+                    {selectedLead ? 'Update' : 'Create'}
                   </Button>
                 </div>
               </form>
@@ -654,7 +654,7 @@ export default function Leads() {
         <div className="relative">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
           <Input
-            placeholder="İsim, e-posta veya telefon ile arayın..."
+            placeholder="Search by name, email or phone..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="pl-10"
@@ -666,36 +666,36 @@ export default function Leads() {
           <Table className="min-w-[900px]">
             <TableHeader>
               <TableRow>
-                <TableHead>İsim</TableHead>
-                <TableHead>İletişim</TableHead>
+                <TableHead>Name</TableHead>
+                <TableHead>Contact</TableHead>
                 <TableHead>
-                  <ColumnFilter title="Konum" options={countryOptions} selectedValues={countryFilter} onFilterChange={setCountryFilter} />
+                  <ColumnFilter title="Location" options={countryOptions} selectedValues={countryFilter} onFilterChange={setCountryFilter} />
                 </TableHead>
                 <TableHead>
-                  <ColumnFilter title="Durum" options={statusOptions} selectedValues={statusFilter} onFilterChange={setStatusFilter} />
+                  <ColumnFilter title="Status" options={statusOptions} selectedValues={statusFilter} onFilterChange={setStatusFilter} />
                 </TableHead>
-                <TableHead>Not</TableHead>
+                <TableHead>Notes</TableHead>
                 <TableHead>
-                  <ColumnFilter title="Klinik" options={clinicOptions} selectedValues={clinicFilter} onFilterChange={setClinicFilter} />
+                  <ColumnFilter title="Clinic" options={clinicOptions} selectedValues={clinicFilter} onFilterChange={setClinicFilter} />
                 </TableHead>
                 <TableHead>
-                  <ColumnFilter title="Kaynak" options={sourceOptions} selectedValues={sourceFilter} onFilterChange={setSourceFilter} />
+                  <ColumnFilter title="Source" options={sourceOptions} selectedValues={sourceFilter} onFilterChange={setSourceFilter} />
                 </TableHead>
-                <TableHead>Tarih</TableHead>
-                <TableHead>İşlemler</TableHead>
+                <TableHead>Date</TableHead>
+                <TableHead>Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {loading ? (
                 <TableRow>
                   <TableCell colSpan={9} className="text-center py-8">
-                    Yükleniyor...
+                    Loading...
                   </TableCell>
                 </TableRow>
               ) : filteredLeads.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={9} className="text-center py-8 text-muted-foreground">
-                    Lead bulunamadı
+                    No leads found
                   </TableCell>
                 </TableRow>
               ) : (
@@ -733,6 +733,7 @@ export default function Leads() {
                         </Badge>
                       ) : (
                         <Select 
+                          key={`status-${lead.id}-${lead.status}`}
                           value={lead.status} 
                           onValueChange={(value) => handleStatusChange(lead.id, value)}
                         >
@@ -776,18 +777,18 @@ export default function Leads() {
                             ) : (
                               <>
                                 <MessageSquarePlus className="w-3 h-3 text-muted-foreground" />
-                                <span className="text-muted-foreground">Not ekle</span>
+                                <span className="text-muted-foreground">Add note</span>
                               </>
                             )}
                           </Button>
                         </PopoverTrigger>
                         <PopoverContent className="w-72 p-3" align="start">
                           <div className="space-y-2">
-                            <Label className="text-xs font-medium">Not</Label>
+                            <Label className="text-xs font-medium">Note</Label>
                             <Textarea
                               value={noteEditValue}
                               onChange={(e) => setNoteEditValue(e.target.value)}
-                              placeholder="Lead hakkında not ekleyin..."
+                              placeholder="Add a note about this lead..."
                               rows={3}
                               className="text-sm"
                               autoFocus
@@ -799,14 +800,14 @@ export default function Leads() {
                                 className="h-7 text-xs"
                                 onClick={() => setNoteEditLead(null)}
                               >
-                                İptal
+                                Cancel
                               </Button>
                               <Button 
                                 size="sm" 
                                 className="h-7 text-xs"
                                 onClick={() => handleNoteSave(lead.id)}
                               >
-                                Kaydet
+                                Save
                               </Button>
                             </div>
                           </div>
@@ -833,7 +834,7 @@ export default function Leads() {
                             className="text-xs"
                           >
                             <UserPlus className="w-3 h-3 mr-1" />
-                            Hastaya Dönüştür
+                            Convert to Patient
                           </Button>
                         )}
                         {(isSuperAdmin || isClinicAdmin) && (
@@ -859,8 +860,8 @@ export default function Leads() {
           open={!!deleteTarget}
           onOpenChange={(open) => !open && setDeleteTarget(null)}
           onConfirm={handleDeleteLead}
-          title="Lead Sil"
-          description={`${deleteTarget?.first_name} ${deleteTarget?.last_name} lead kaydını silmek istediğinize emin misiniz? Bu işlem geri alınamaz.`}
+          title="Delete Lead"
+          description={`Are you sure you want to delete the lead ${deleteTarget?.first_name} ${deleteTarget?.last_name}? This action cannot be undone.`}
         />
       </div>
     </Layout>

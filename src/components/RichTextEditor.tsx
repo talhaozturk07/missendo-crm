@@ -199,10 +199,10 @@ export function RichTextEditor({ content, onChange, placeholder, className }: Ri
       // Insert image into editor
       editor.chain().focus().setImage({ src: publicUrl }).run();
       setImagePopoverOpen(false);
-      toast.success('Görsel başarıyla eklendi');
+      toast.success('Image added successfully');
     } catch (error: any) {
       console.error('Image upload error:', error);
-      toast.error('Görsel yüklenirken hata oluştu: ' + (error.message || 'Bilinmeyen hata'));
+      toast.error('Failed to upload image: ' + (error.message || 'Unknown error'));
     } finally {
       setIsUploading(false);
       if (fileInputRef.current) {
@@ -448,7 +448,7 @@ export function RichTextEditor({ content, onChange, placeholder, className }: Ri
               </PopoverTrigger>
               <PopoverContent className="w-80 p-3" align="start">
                 <div className="space-y-4">
-                  <p className="text-sm font-medium">Görsel Ekle</p>
+                  <p className="text-sm font-medium">Add Image</p>
                   
                   {/* File Upload */}
                   <div className="space-y-2">
@@ -471,7 +471,7 @@ export function RichTextEditor({ content, onChange, placeholder, className }: Ri
                       {isUploading ? (
                         <>
                           <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                          Yükleniyor...
+                          Uploading...
                         </>
                       ) : (
                         <>
@@ -493,7 +493,7 @@ export function RichTextEditor({ content, onChange, placeholder, className }: Ri
 
                   {/* URL Input */}
                   <div className="space-y-2">
-                    <Label className="text-xs text-muted-foreground">URL ile ekle</Label>
+                    <Label className="text-xs text-muted-foreground">Add via URL</Label>
                     <div className="flex gap-2">
                       <Input
                         placeholder="https://example.com/image.jpg"
@@ -503,7 +503,7 @@ export function RichTextEditor({ content, onChange, placeholder, className }: Ri
                         disabled={isUploading}
                       />
                       <Button size="sm" onClick={addImage} disabled={isUploading || !imageUrl}>
-                        Ekle
+                        Add
                       </Button>
                     </div>
                   </div>

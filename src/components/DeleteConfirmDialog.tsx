@@ -22,8 +22,8 @@ export function DeleteConfirmDialog({
   open,
   onOpenChange,
   onConfirm,
-  title = "Bu işlemi yapmak istediğinize emin misiniz?",
-  description = "Bu işlem geri alınamaz. Kayıt kalıcı olarak silinecektir.",
+  title = "Are you sure?",
+  description = "This action cannot be undone. The record will be permanently deleted.",
   isDeleting = false,
 }: DeleteConfirmDialogProps) {
   return (
@@ -34,13 +34,13 @@ export function DeleteConfirmDialog({
           <AlertDialogDescription>{description}</AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel disabled={isDeleting}>İptal</AlertDialogCancel>
+          <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
           <AlertDialogAction
             onClick={onConfirm}
             disabled={isDeleting}
             className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
           >
-            {isDeleting ? 'Siliniyor...' : 'Evet, Sil'}
+            {isDeleting ? 'Deleting...' : 'Yes, Delete'}
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>

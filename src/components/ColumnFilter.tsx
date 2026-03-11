@@ -102,7 +102,7 @@ export function ColumnFilter({ title, options, selectedValues, onFilterChange }:
           <div className="p-2 space-y-1">
             {filteredOptions.length === 0 ? (
               <p className="text-sm text-muted-foreground text-center py-4">
-                Sonuç bulunamadı
+                No results found
               </p>
             ) : (
               filteredOptions.map((option) => (

@@ -234,7 +234,7 @@ export default function Media() {
           <div>
             <h1 className="text-2xl font-bold text-foreground">Media Gallery</h1>
             <p className="text-sm text-muted-foreground mt-1">
-              Tüm hasta fotoğraf ve belgeleri ({documents.length} dosya)
+              All patient photos and documents ({documents.length} files)
             </p>
           </div>
         </div>
@@ -243,7 +243,7 @@ export default function Media() {
         <div className="relative max-w-md">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
-            placeholder="Hasta adı veya dosya adı ile ara..."
+            placeholder="Search by patient name or file name..."
             value={search}
             onChange={e => setSearch(e.target.value)}
             className="pl-10"
@@ -254,11 +254,11 @@ export default function Media() {
           <TabsList>
             <TabsTrigger value="photos" className="gap-2">
               <Image className="h-4 w-4" />
-              Fotoğraflar ({filteredPhotos.length})
+              Photos ({filteredPhotos.length})
             </TabsTrigger>
             <TabsTrigger value="documents" className="gap-2">
               <FileText className="h-4 w-4" />
-              Belgeler ({filteredDocs.length})
+              Documents ({filteredDocs.length})
             </TabsTrigger>
           </TabsList>
 
@@ -274,7 +274,7 @@ export default function Media() {
               <Card>
                 <CardContent className="flex flex-col items-center justify-center py-12 text-muted-foreground">
                   <Image className="h-12 w-12 mb-3 opacity-40" />
-                  <p>Fotoğraf bulunamadı</p>
+                  <p>No photos found</p>
                 </CardContent>
               </Card>
             ) : (
@@ -341,7 +341,7 @@ export default function Media() {
               <Card>
                 <CardContent className="flex flex-col items-center justify-center py-12 text-muted-foreground">
                   <FileText className="h-12 w-12 mb-3 opacity-40" />
-                  <p>Belge bulunamadı</p>
+                  <p>No documents found</p>
                 </CardContent>
               </Card>
             ) : (
