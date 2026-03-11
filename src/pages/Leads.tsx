@@ -223,10 +223,10 @@ export default function Leads() {
       if (error) throw error;
 
       setLeads(prev => prev.map(l => l.id === leadId ? { ...l, status: newStatus } : l));
-      toast({ title: "Durum güncellendi" });
+      toast({ title: "Status updated" });
     } catch (error) {
       console.error('Error updating status:', error);
-      toast({ title: "Hata", description: "Durum güncellenemedi", variant: "destructive" });
+      toast({ title: "Error", description: "Failed to update status", variant: "destructive" });
     }
   };
 
