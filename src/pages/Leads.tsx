@@ -800,14 +800,14 @@ export default function Leads() {
                                 className="h-7 text-xs"
                                 onClick={() => setNoteEditLead(null)}
                               >
-                                İptal
+                                Cancel
                               </Button>
                               <Button 
                                 size="sm" 
                                 className="h-7 text-xs"
                                 onClick={() => handleNoteSave(lead.id)}
                               >
-                                Kaydet
+                                Save
                               </Button>
                             </div>
                           </div>
