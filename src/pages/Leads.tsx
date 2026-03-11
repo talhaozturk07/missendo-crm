@@ -509,7 +509,7 @@ export default function Leads() {
 
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="country">Ülke</Label>
+                    <Label htmlFor="country">Country</Label>
                     <Input
                       id="country"
                       value={formData.country}
