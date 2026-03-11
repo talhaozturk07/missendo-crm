@@ -448,7 +448,7 @@ export function RichTextEditor({ content, onChange, placeholder, className }: Ri
               </PopoverTrigger>
               <PopoverContent className="w-80 p-3" align="start">
                 <div className="space-y-4">
-                  <p className="text-sm font-medium">Görsel Ekle</p>
+                  <p className="text-sm font-medium">Add Image</p>
                   
                   {/* File Upload */}
                   <div className="space-y-2">
