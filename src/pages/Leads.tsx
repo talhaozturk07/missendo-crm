@@ -436,8 +436,8 @@ export default function Leads() {
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
           <div>
-            <h1 className="text-2xl md:text-3xl font-bold">Lead Yönetimi</h1>
-            <p className="text-sm md:text-base text-muted-foreground mt-1 md:mt-2">Potansiyel hastalarınızı takip edin ve yönetin</p>
+            <h1 className="text-2xl md:text-3xl font-bold">Lead Management</h1>
+            <p className="text-sm md:text-base text-muted-foreground mt-1 md:mt-2">Track and manage your potential patients</p>
           </div>
           <div className="flex gap-2 w-full sm:w-auto">
             <Button 
