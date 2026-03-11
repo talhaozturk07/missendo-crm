@@ -241,10 +241,10 @@ export default function Leads() {
 
       setLeads(prev => prev.map(l => l.id === leadId ? { ...l, notes: noteEditValue || null } : l));
       setNoteEditLead(null);
-      toast({ title: "Not kaydedildi" });
+      toast({ title: "Note saved" });
     } catch (error) {
       console.error('Error saving note:', error);
-      toast({ title: "Hata", description: "Not kaydedilemedi", variant: "destructive" });
+      toast({ title: "Error", description: "Failed to save note", variant: "destructive" });
     }
   };
 
