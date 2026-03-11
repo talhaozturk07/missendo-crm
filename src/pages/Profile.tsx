@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
+import { convertToWebP } from '@/lib/imageUtils';
 import { useToast } from '@/hooks/use-toast';
 import Layout from '@/components/Layout';
 import { Button } from '@/components/ui/button';
@@ -51,13 +52,14 @@ export default function Profile() {
       }
 
       const file = event.target.files[0];
-      const fileExt = file.name.split('.').pop();
+      const convertedFile = await convertToWebP(file);
+      const fileExt = convertedFile.name.split('.').pop();
       const fileName = `${user?.id}-${Math.random()}.${fileExt}`;
       const filePath = `avatars/${fileName}`;
 
       const { error: uploadError } = await supabase.storage
         .from('avatars')
-        .upload(filePath, file, { upsert: true });
+        .upload(filePath, convertedFile, { upsert: true, contentType: convertedFile.type });
 
       if (uploadError) {
         throw uploadError;
