@@ -34,6 +34,7 @@ import {
   Bell,
   Mail,
   Handshake,
+  ImageIcon,
 } from 'lucide-react';
 import { signOut } from '@/lib/auth';
 import { useToast } from '@/hooks/use-toast';
@@ -81,6 +82,7 @@ export default function Layout({ children }: LayoutProps) {
   if (isSuperAdmin) {
     navItems.push({ path: '/reminders', icon: Bell, label: 'Reminders' });
     navItems.push({ path: '/mailing', icon: Mail, label: 'Mailing' });
+    navItems.push({ path: '/media', icon: ImageIcon, label: 'Media' });
     navItems.push({ path: '/organizations', icon: Building2, label: 'Organizations' });
   }
 
