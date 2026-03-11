@@ -39,6 +39,7 @@ import {
 } from '@/components/ui/popover';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { supabase } from '@/integrations/supabase/client';
+import { convertToWebP } from '@/lib/imageUtils';
 import { toast } from 'sonner';
 
 interface RichTextEditorProps {

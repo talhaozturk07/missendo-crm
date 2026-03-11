@@ -113,40 +113,45 @@ export default function Media() {
     );
   }, [docs, search]);
 
-  // Load thumbnails for visible photos
+  // Create lightweight transformed preview URLs for visible photos
   useEffect(() => {
     const loadThumbnails = async () => {
-      const toLoad = filteredPhotos.filter(p => !thumbnails[p.id]).slice(0, 50);
+      const toLoad = filteredPhotos.filter((p) => !thumbnails[p.id]).slice(0, 40);
       if (toLoad.length === 0) return;
 
-      const newThumbs: Record<string, string> = {};
-      await Promise.all(toLoad.map(async (doc) => {
-        try {
-          const { data } = await supabase.storage
+      const entries = await Promise.all(
+        toLoad.map(async (doc) => {
+          const { data, error } = await supabase.storage
             .from('patient-documents')
-            .download(doc.file_path);
-          if (data) {
-            newThumbs[doc.id] = URL.createObjectURL(data);
+            .createSignedUrl(doc.file_path, 60 * 60, {
+              transform: {
+                width: 480,
+                height: 480,
+                resize: 'cover',
+                quality: 80,
+              },
+            });
+
+          if (error || !data?.signedUrl) {
+            console.error('Thumbnail URL error:', error);
+            return null;
           }
-        } catch (err) {
-          console.error('Thumbnail load error:', err);
-        }
-      }));
+
+          return [doc.id, data.signedUrl] as const;
+        })
+      );
+
+      const newThumbs = Object.fromEntries(
+        entries.filter((entry): entry is readonly [string, string] => Boolean(entry))
+      );
 
       if (Object.keys(newThumbs).length > 0) {
-        setThumbnails(prev => ({ ...prev, ...newThumbs }));
+        setThumbnails((prev) => ({ ...prev, ...newThumbs }));
       }
     };
 
     loadThumbnails();
-  }, [filteredPhotos]);
-
-  // Cleanup blob URLs
-  useEffect(() => {
-    return () => {
-      Object.values(thumbnails).forEach(url => URL.revokeObjectURL(url));
-    };
-  }, []);
+  }, [filteredPhotos, thumbnails]);
 
   const openLightbox = async (index: number) => {
     setLightboxIndex(index);
