@@ -834,7 +834,7 @@ export default function Leads() {
                             className="text-xs"
                           >
                             <UserPlus className="w-3 h-3 mr-1" />
-                            Hastaya Dönüştür
+                            Convert to Patient
                           </Button>
                         )}
                         {(isSuperAdmin || isClinicAdmin) && (
