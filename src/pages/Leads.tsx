@@ -497,7 +497,7 @@ export default function Leads() {
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="phone">Telefon *</Label>
+                    <Label htmlFor="phone">Phone *</Label>
                     <Input
                       id="phone"
                       value={formData.phone}
