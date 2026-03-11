@@ -467,7 +467,7 @@ export default function Leads() {
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="first_name">Ad *</Label>
+                    <Label htmlFor="first_name">First Name *</Label>
                     <Input
                       id="first_name"
                       value={formData.first_name}
