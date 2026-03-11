@@ -376,8 +376,8 @@ export default function Leads() {
       if (leadError) throw leadError;
 
       toast({
-        title: "Başarılı",
-        description: `${lead.first_name} ${lead.last_name} hastaya dönüştürüldü`,
+        title: "Success",
+        description: `${lead.first_name} ${lead.last_name} converted to patient`,
       });
 
       loadLeads();
