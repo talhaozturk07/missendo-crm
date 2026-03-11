@@ -777,7 +777,7 @@ export default function Leads() {
                             ) : (
                               <>
                                 <MessageSquarePlus className="w-3 h-3 text-muted-foreground" />
-                                <span className="text-muted-foreground">Not ekle</span>
+                                <span className="text-muted-foreground">Add note</span>
                               </>
                             )}
                           </Button>
