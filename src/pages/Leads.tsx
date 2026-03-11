@@ -733,6 +733,7 @@ export default function Leads() {
                         </Badge>
                       ) : (
                         <Select 
+                          key={`status-${lead.id}-${lead.status}`}
                           value={lead.status} 
                           onValueChange={(value) => handleStatusChange(lead.id, value)}
                         >
