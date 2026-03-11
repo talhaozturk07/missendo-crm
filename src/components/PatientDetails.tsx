@@ -404,9 +404,13 @@ export function PatientDetails({ patientId, onClose }: PatientDetailsProps) {
     let errorCount = 0;
 
     try {
-      for (const file of documentFiles) {
+      for (let file of documentFiles) {
         let fileName: string | null = null;
         try {
+          // Convert images to WebP for better performance
+          if (file.type.startsWith('image/')) {
+            file = await convertToWebP(file);
+          }
           const fileExt = file.name.split('.').pop();
           fileName = `${patientId}/${Date.now()}-${Math.random().toString(36).substr(2, 9)}.${fileExt}`;
 

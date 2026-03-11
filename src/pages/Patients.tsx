@@ -235,12 +235,13 @@ export default function Patients() {
 
       // Upload photo if a new file is selected
       if (photoFile) {
+        const convertedPhoto = await convertToWebP(photoFile);
         const patientId = selectedPatient?.id || crypto.randomUUID();
-        const fileExt = photoFile.name.split('.').pop();
+        const fileExt = convertedPhoto.name.split('.').pop();
         const fileName = `${patientId}/${Date.now()}.${fileExt}`;
         const {
           error: uploadError
-        } = await supabase.storage.from('patient-photos').upload(fileName, photoFile, {
+        } = await supabase.storage.from('patient-photos').upload(fileName, convertedPhoto, {
           upsert: true
         });
         if (uploadError) throw uploadError;
