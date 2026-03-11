@@ -476,7 +476,7 @@ export default function Leads() {
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="last_name">Soyad *</Label>
+                    <Label htmlFor="last_name">Last Name *</Label>
                     <Input
                       id="last_name"
                       value={formData.last_name}
