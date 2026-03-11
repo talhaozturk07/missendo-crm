@@ -2689,29 +2689,51 @@ export function PatientDetails({ patientId, onClose }: PatientDetailsProps) {
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
                   {documents
                     .filter(doc => doc.category === 'photo')
-                    .map(doc => (
+                    .map(doc => {
+                      const isBlurred = doc.is_sensitive && !revealedSensitive.has(doc.id);
+                      return (
                       <div 
                         key={doc.id} 
                         className="group relative aspect-square rounded-lg overflow-hidden border bg-muted"
                       >
                         <div 
                           className="w-full h-full cursor-pointer"
-                          onClick={() => handleViewDocument(doc.file_path, doc.document_name, doc.document_type)}
+                          onClick={() => {
+                            if (isBlurred) { toggleReveal(doc.id); return; }
+                            handleViewDocument(doc.file_path, doc.document_name, doc.document_type);
+                          }}
                         >
                           {documentThumbnails[doc.id] ? (
                             <img
                               src={documentThumbnails[doc.id]}
                               alt={doc.document_name}
-                              className="w-full h-full object-cover"
+                              className={`w-full h-full object-cover transition-all duration-300 ${isBlurred ? 'blur-xl scale-110' : ''}`}
                             />
                           ) : (
                             <div className="w-full h-full flex items-center justify-center">
                               <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary"></div>
                             </div>
                           )}
+                          {isBlurred && (
+                            <div className="absolute inset-0 flex items-center justify-center bg-black/20">
+                              <EyeOff className="w-6 h-6 text-white drop-shadow-lg" />
+                            </div>
+                          )}
                         </div>
                         {/* Action buttons in top-right corner */}
                         <div className="absolute top-1 right-1 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity z-10">
+                          <Button
+                            size="sm"
+                            variant="secondary"
+                            className="h-7 w-7 p-0 shadow-md"
+                            title={doc.is_sensitive ? 'Hassas işaretini kaldır' : 'Hassas olarak işaretle'}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              toggleSensitive(doc.id, doc.is_sensitive);
+                            }}
+                          >
+                            {doc.is_sensitive ? <EyeOff className="w-3 h-3" /> : <Eye className="w-3 h-3" />}
+                          </Button>
                           <Button
                             size="sm"
                             variant="secondary"
@@ -2736,7 +2758,8 @@ export function PatientDetails({ patientId, onClose }: PatientDetailsProps) {
                           </Button>
                         </div>
                       </div>
-                    ))}
+                      );
+                    })}
                 </div>
               </CardContent>
             </Card>
