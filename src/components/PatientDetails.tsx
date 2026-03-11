@@ -15,7 +15,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
-import { Calendar, FileText, Plus, Upload, Download, Trash2, Eye, MessageSquare, CreditCard, Plane, DollarSign, User, Phone, Mail, MapPin, ExternalLink, ChevronLeft, ChevronRight, Pencil, Video, Image, Scan, Cake, PhoneCall, Bell, Clock } from 'lucide-react';
+import { Calendar, FileText, Plus, Upload, Download, Trash2, Eye, EyeOff, MessageSquare, CreditCard, Plane, DollarSign, User, Phone, Mail, MapPin, ExternalLink, ChevronLeft, ChevronRight, Pencil, Video, Image, Scan, Cake, PhoneCall, Bell, Clock } from 'lucide-react';
 import { differenceInYears } from 'date-fns';
 import { DeleteConfirmDialog } from '@/components/DeleteConfirmDialog';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -53,6 +53,7 @@ interface Document {
   created_at: string;
   notes: string | null;
   category: 'photo' | 'xray' | 'document';
+  is_sensitive: boolean;
 }
 
 interface PatientNote {
@@ -152,6 +153,7 @@ export function PatientDetails({ patientId, onClose }: PatientDetailsProps) {
   const [reminderNotifyOption, setReminderNotifyOption] = useState<'only_me' | 'all_admins' | 'specific'>('only_me');
   const [reminderSelectedAdmins, setReminderSelectedAdmins] = useState<string[]>([]);
   const [superAdmins, setSuperAdmins] = useState<{ id: string; first_name: string; last_name: string; email: string }[]>([]);
+  const [revealedSensitive, setRevealedSensitive] = useState<Set<string>>(new Set());
 
   const [appointmentForm, setAppointmentForm] = useState({
     appointment_date: '',
@@ -279,7 +281,8 @@ export function PatientDetails({ patientId, onClose }: PatientDetailsProps) {
       setAppointments(appointmentsRes.data || []);
       setDocuments((documentsRes.data || []).map(doc => ({
         ...doc,
-        category: (doc.category as 'photo' | 'xray' | 'document') || 'document'
+        category: (doc.category as 'photo' | 'xray' | 'document') || 'document',
+        is_sensitive: (doc as any).is_sensitive ?? false
       })));
       setNotes((notesRes.data || []) as PatientNote[]);
       setPayments(paymentsRes.data || []);
@@ -561,7 +564,34 @@ export function PatientDetails({ patientId, onClose }: PatientDetailsProps) {
     }
   };
 
-  const handleDownloadDocument = async (filePath: string, fileName: string) => {
+  const toggleSensitive = async (docId: string, currentValue: boolean) => {
+    const newValue = !currentValue;
+    const { error } = await supabase
+      .from('patient_documents')
+      .update({ is_sensitive: newValue })
+      .eq('id', docId);
+
+    if (error) {
+      toast({ title: 'Error', description: 'Failed to update sensitivity', variant: 'destructive' });
+      return;
+    }
+
+    setDocuments(prev => prev.map(d => d.id === docId ? { ...d, is_sensitive: newValue } : d));
+    // If marking as sensitive, remove from revealed set
+    if (newValue) {
+      setRevealedSensitive(prev => { const next = new Set(prev); next.delete(docId); return next; });
+    }
+  };
+
+  const toggleReveal = (docId: string) => {
+    setRevealedSensitive(prev => {
+      const next = new Set(prev);
+      if (next.has(docId)) next.delete(docId); else next.add(docId);
+      return next;
+    });
+  };
+
+
     try {
       const { data, error } = await supabase.storage
         .from('patient-documents')
@@ -2659,29 +2689,51 @@ export function PatientDetails({ patientId, onClose }: PatientDetailsProps) {
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
                   {documents
                     .filter(doc => doc.category === 'photo')
-                    .map(doc => (
+                    .map(doc => {
+                      const isBlurred = doc.is_sensitive && !revealedSensitive.has(doc.id);
+                      return (
                       <div 
                         key={doc.id} 
                         className="group relative aspect-square rounded-lg overflow-hidden border bg-muted"
                       >
                         <div 
                           className="w-full h-full cursor-pointer"
-                          onClick={() => handleViewDocument(doc.file_path, doc.document_name, doc.document_type)}
+                          onClick={() => {
+                            if (isBlurred) { toggleReveal(doc.id); return; }
+                            handleViewDocument(doc.file_path, doc.document_name, doc.document_type);
+                          }}
                         >
                           {documentThumbnails[doc.id] ? (
                             <img
                               src={documentThumbnails[doc.id]}
                               alt={doc.document_name}
-                              className="w-full h-full object-cover"
+                              className={`w-full h-full object-cover transition-all duration-300 ${isBlurred ? 'blur-xl scale-110' : ''}`}
                             />
                           ) : (
                             <div className="w-full h-full flex items-center justify-center">
                               <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary"></div>
                             </div>
                           )}
+                          {isBlurred && (
+                            <div className="absolute inset-0 flex items-center justify-center bg-black/20">
+                              <EyeOff className="w-6 h-6 text-white drop-shadow-lg" />
+                            </div>
+                          )}
                         </div>
                         {/* Action buttons in top-right corner */}
                         <div className="absolute top-1 right-1 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity z-10">
+                          <Button
+                            size="sm"
+                            variant="secondary"
+                            className="h-7 w-7 p-0 shadow-md"
+                            title={doc.is_sensitive ? 'Hassas işaretini kaldır' : 'Hassas olarak işaretle'}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              toggleSensitive(doc.id, doc.is_sensitive);
+                            }}
+                          >
+                            {doc.is_sensitive ? <EyeOff className="w-3 h-3" /> : <Eye className="w-3 h-3" />}
+                          </Button>
                           <Button
                             size="sm"
                             variant="secondary"
@@ -2706,7 +2758,8 @@ export function PatientDetails({ patientId, onClose }: PatientDetailsProps) {
                           </Button>
                         </div>
                       </div>
-                    ))}
+                      );
+                    })}
                 </div>
               </CardContent>
             </Card>
@@ -2725,29 +2778,51 @@ export function PatientDetails({ patientId, onClose }: PatientDetailsProps) {
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
                   {documents
                     .filter(doc => doc.category === 'xray')
-                    .map(doc => (
+                    .map(doc => {
+                      const isBlurred = doc.is_sensitive && !revealedSensitive.has(doc.id);
+                      return (
                       <div 
                         key={doc.id} 
                         className="group relative aspect-square rounded-lg overflow-hidden border bg-muted"
                       >
                         <div 
                           className="w-full h-full cursor-pointer"
-                          onClick={() => handleViewDocument(doc.file_path, doc.document_name, doc.document_type)}
+                          onClick={() => {
+                            if (isBlurred) { toggleReveal(doc.id); return; }
+                            handleViewDocument(doc.file_path, doc.document_name, doc.document_type);
+                          }}
                         >
                           {documentThumbnails[doc.id] ? (
                             <img
                               src={documentThumbnails[doc.id]}
                               alt={doc.document_name}
-                              className="w-full h-full object-cover"
+                              className={`w-full h-full object-cover transition-all duration-300 ${isBlurred ? 'blur-xl scale-110' : ''}`}
                             />
                           ) : (
                             <div className="w-full h-full flex items-center justify-center">
                               <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary"></div>
                             </div>
                           )}
+                          {isBlurred && (
+                            <div className="absolute inset-0 flex items-center justify-center bg-black/20">
+                              <EyeOff className="w-6 h-6 text-white drop-shadow-lg" />
+                            </div>
+                          )}
                         </div>
                         {/* Action buttons in top-right corner */}
                         <div className="absolute top-1 right-1 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity z-10">
+                          <Button
+                            size="sm"
+                            variant="secondary"
+                            className="h-7 w-7 p-0 shadow-md"
+                            title={doc.is_sensitive ? 'Hassas işaretini kaldır' : 'Hassas olarak işaretle'}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              toggleSensitive(doc.id, doc.is_sensitive);
+                            }}
+                          >
+                            {doc.is_sensitive ? <EyeOff className="w-3 h-3" /> : <Eye className="w-3 h-3" />}
+                          </Button>
                           <Button
                             size="sm"
                             variant="secondary"
@@ -2772,7 +2847,8 @@ export function PatientDetails({ patientId, onClose }: PatientDetailsProps) {
                           </Button>
                         </div>
                       </div>
-                    ))}
+                      );
+                    })}
                 </div>
               </CardContent>
             </Card>
