@@ -153,6 +153,7 @@ export function PatientDetails({ patientId, onClose }: PatientDetailsProps) {
   const [reminderNotifyOption, setReminderNotifyOption] = useState<'only_me' | 'all_admins' | 'specific'>('only_me');
   const [reminderSelectedAdmins, setReminderSelectedAdmins] = useState<string[]>([]);
   const [superAdmins, setSuperAdmins] = useState<{ id: string; first_name: string; last_name: string; email: string }[]>([]);
+  const [revealedSensitive, setRevealedSensitive] = useState<Set<string>>(new Set());
 
   const [appointmentForm, setAppointmentForm] = useState({
     appointment_date: '',
