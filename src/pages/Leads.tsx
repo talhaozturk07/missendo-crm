@@ -666,23 +666,23 @@ export default function Leads() {
           <Table className="min-w-[900px]">
             <TableHeader>
               <TableRow>
-                <TableHead>İsim</TableHead>
-                <TableHead>İletişim</TableHead>
+                <TableHead>Name</TableHead>
+                <TableHead>Contact</TableHead>
                 <TableHead>
-                  <ColumnFilter title="Konum" options={countryOptions} selectedValues={countryFilter} onFilterChange={setCountryFilter} />
+                  <ColumnFilter title="Location" options={countryOptions} selectedValues={countryFilter} onFilterChange={setCountryFilter} />
                 </TableHead>
                 <TableHead>
-                  <ColumnFilter title="Durum" options={statusOptions} selectedValues={statusFilter} onFilterChange={setStatusFilter} />
+                  <ColumnFilter title="Status" options={statusOptions} selectedValues={statusFilter} onFilterChange={setStatusFilter} />
                 </TableHead>
-                <TableHead>Not</TableHead>
+                <TableHead>Notes</TableHead>
                 <TableHead>
-                  <ColumnFilter title="Klinik" options={clinicOptions} selectedValues={clinicFilter} onFilterChange={setClinicFilter} />
+                  <ColumnFilter title="Clinic" options={clinicOptions} selectedValues={clinicFilter} onFilterChange={setClinicFilter} />
                 </TableHead>
                 <TableHead>
-                  <ColumnFilter title="Kaynak" options={sourceOptions} selectedValues={sourceFilter} onFilterChange={setSourceFilter} />
+                  <ColumnFilter title="Source" options={sourceOptions} selectedValues={sourceFilter} onFilterChange={setSourceFilter} />
                 </TableHead>
-                <TableHead>Tarih</TableHead>
-                <TableHead>İşlemler</TableHead>
+                <TableHead>Date</TableHead>
+                <TableHead>Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
