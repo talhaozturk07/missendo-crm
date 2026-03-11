@@ -286,12 +286,13 @@ export default function Media() {
                     onClick={() => openLightbox(idx)}
                   >
                     {thumbnails[photo.id] ? (
-                      <img
-                        src={thumbnails[photo.id]}
-                        alt={photo.document_name}
-                        className="w-full h-full object-cover"
-                        loading="lazy"
-                      />
+                        <img
+                          src={thumbnails[photo.id]}
+                          alt={photo.document_name}
+                          className="w-full h-full object-cover"
+                          loading="lazy"
+                          decoding="async"
+                        />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center">
                         <div className="animate-pulse rounded-full h-6 w-6 border-b-2 border-primary" />

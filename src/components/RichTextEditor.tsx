@@ -173,17 +173,18 @@ export function RichTextEditor({ content, onChange, placeholder, className }: Ri
     setIsUploading(true);
 
     try {
-      // Generate unique filename
-      const fileExt = file.name.split('.').pop();
+      const convertedFile = await convertToWebP(file);
+      const fileExt = convertedFile.name.split('.').pop();
       const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
       const filePath = `campaign-images/${fileName}`;
 
       // Upload to Supabase storage
       const { error: uploadError } = await supabase.storage
         .from('email-assets')
-        .upload(filePath, file, {
+        .upload(filePath, convertedFile, {
           cacheControl: '3600',
-          upsert: false
+          upsert: false,
+          contentType: convertedFile.type,
         });
 
       if (uploadError) {
