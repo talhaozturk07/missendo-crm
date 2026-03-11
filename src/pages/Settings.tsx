@@ -193,6 +193,9 @@ export default function Settings() {
         </div>
 
         {/* Theme Selector - Super Admins Only */}
+        {isSuperAdmin && <BatchWebPConverter />}
+
+        {/* Theme Selector - Super Admins Only */}
         {isSuperAdmin && <ThemeSelector />}
 
         {/* Activity Logs - Super Admins Only */}
