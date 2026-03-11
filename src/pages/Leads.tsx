@@ -689,13 +689,13 @@ export default function Leads() {
               {loading ? (
                 <TableRow>
                   <TableCell colSpan={9} className="text-center py-8">
-                    Yükleniyor...
+                    Loading...
                   </TableCell>
                 </TableRow>
               ) : filteredLeads.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={9} className="text-center py-8 text-muted-foreground">
-                    Lead bulunamadı
+                    No leads found
                   </TableCell>
                 </TableRow>
               ) : (
