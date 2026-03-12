@@ -1,24 +1,47 @@
 
 
-## Problem
+## Sorun Analizi: İstenmeyen Lead'ler Neden Sisteme Düşüyor?
 
-Facebook OAuth login scope'unda `ads_read` izni isteniyor ancak bu izin Meta App Review'da **"Not approved"** durumunda. Facebook, onaylanmamış izin istendiğinde harici kullanıcılara (App Role'ü olmayan) "Missing Permissions" hatası gösteriyor.
+Kod incelemesi sonucunda **3 kritik filtreleme açığı** tespit edildi:
 
-## Çözüm
+### Kök Nedenler
 
-`ads_read` iznini OAuth scope'undan kaldırmak. Sistem zaten `ads_read` olmadan da lead senkronizasyonu yapabiliyor (sayfa düzeyinde `/{page_id}/leads` polling fallback mekanizması mevcut). Sadece reklam performans metrikleri (CPL, harcama vs.) bu izin olmadan çalışmayacak.
+**1. Webhook'ta `ad_id` null olunca filtreleme atlanıyor (EN KRİTİK)**
 
-## Değişiklikler
+Webhook kodunda (satır 97):
+```
+if (selectedCampaigns.length > 0 && adId) {
+```
+Eğer gelen lead'in `ad_id` değeri boş/null ise (test lead'leri, organik lead'ler veya Facebook'un bazen ad_id göndermediği durumlar), **kampanya filtresi tamamen devre dışı kalıyor** ve lead direkt kabul ediliyor.
 
-### 1. `src/components/FacebookConnectButton.tsx`
-- Satır 176'daki OAuth scope'undan `ads_read` kaldırılacak
-- Scope: `pages_show_list,pages_read_engagement,leads_retrieval,pages_manage_metadata`
+**2. Webhook'ta page_id eşleşmezse TÜM organizasyonlarda deneniyor**
 
-### 2. Opsiyonel: Reklam performans özelliklerinde uyarı
-- `ads_read` olmadan Ad Performance Dashboard çalışmayacak, bu bölümde kullanıcıya bilgi verilebilir
+Webhook kodunda (satır 75-76):
+```
+const matchedOrgs = (orgs || []).filter(o => o.fb_page_id === pageId);
+const orgsToTry = matchedOrgs.length > 0 ? matchedOrgs : (orgs || []);
+```
+Eğer gelen lead'in page_id'si hiçbir org ile eşleşmezse, sistem tüm organizasyonların token'larını deniyor. Bu da başka sayfalardan gelen lead'lerin yanlış organizasyona düşmesine neden olabiliyor.
 
-## Etki
-- Harici klinik kullanıcıları Facebook'a bağlanabilecek
-- Lead senkronizasyonu normal çalışmaya devam edecek
-- Reklam performans metrikleri (CPL, spend vb.) görüntülenemeyecek (`ads_read` onaylanana kadar)
+**3. Webhook'ta `adId` yokken `break` yerine `continue` sorunu**
+
+Filtreleme `break` ile sonlanıyor ama bu sadece mevcut org döngüsünü kırıyor — eğer `adId` null ise zaten filtreleme bloğuna hiç girilmiyor ve lead kabul ediliyor.
+
+---
+
+### Çözüm Planı
+
+**Webhook (`facebook-lead-webhook/index.ts`):**
+- `ad_id` null olsa bile kampanya filtresi aktifse, lead'i **reddet** (kabul etme). Eğer ad_id yoksa ve filtre aktifse, form_id üzerinden lead form'unun bağlı olduğu kampanyayı kontrol et veya doğrudan reddet.
+- page_id eşleşmezse fallback'i kaldır — eşleşmeyen lead'leri atla, tüm org'larda deneme.
+- Filtreleme kontrolünü daha güvenli hale getir: `adId` yoksa ve kampanya filtresi aktifse lead'i kabul etme.
+
+**Polling (`poll-facebook-leads/index.ts`):**
+- Polling zaten kampanya bazlı çalışıyor ve page-level polling kampanya filtresi aktifken atlanıyor — bu kısım doğru. Ek bir değişiklik gerekmez.
+
+### Değişiklik Detayları
+
+1. **Webhook: `ad_id` null kontrolü** — Kampanya filtresi aktifken `ad_id` olmayan lead'leri reddet
+2. **Webhook: page_id fallback kaldırma** — `matchedOrgs` boşsa lead'i atla, başka org'larda deneme
+3. **Detaylı loglama** — Reddedilen lead'ler için neden reddedildiğini logla
 
