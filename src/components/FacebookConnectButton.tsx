@@ -74,6 +74,26 @@ export function FacebookConnectButton() {
   const [permissionInfo, setPermissionInfo] = useState<PermissionCheck | null>(null);
   const [errorCode, setErrorCode] = useState<string | null>(null);
 
+  // Diagnostics state
+  const [diagLoading, setDiagLoading] = useState(false);
+  const [diagResult, setDiagResult] = useState<DiagnosticResult | null>(null);
+
+  const checkDiagnostics = async (pageId: string) => {
+    setDiagLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('facebook-oauth', {
+        body: { action: 'diagnostics', pageId },
+      });
+      if (error) throw error;
+      setDiagResult(data);
+    } catch (err: any) {
+      console.error('Diagnostics error:', err);
+      setDiagResult({ webhookActive: false, leadgenSubscribed: false, forms: [], error: err.message });
+    } finally {
+      setDiagLoading(false);
+    }
+  };
+
   const loadConnectionStatus = useCallback(async () => {
     if (!profile?.organization_id) return;
     try {
