@@ -119,8 +119,8 @@ export function FacebookConnectButton() {
     setLoading(true);
     const loginTimeout = window.setTimeout(() => {
       setLoading(false);
-      toast({ title: 'Facebook window could not be opened', description: 'The popup may be blocked.', variant: 'destructive' });
-    }, 20000);
+      toast({ title: 'Facebook window could not be opened', description: 'The popup may be blocked. Please allow popups for this site and try again.', variant: 'destructive' });
+    }, 120000);
 
     try {
       window.FB.login((response: any) => {
