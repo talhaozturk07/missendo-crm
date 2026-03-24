@@ -22,7 +22,7 @@ interface CampaignInsight {
   conversions: number;
 }
 
-export function AdPerformanceDashboard() {
+export function AdPerformanceDashboard({ autoFetch = false }: { autoFetch?: boolean }) {
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
   const [campaigns, setCampaigns] = useState<CampaignInsight[]>([]);
@@ -30,6 +30,7 @@ export function AdPerformanceDashboard() {
   const [error, setError] = useState<string | null>(null);
   const [hasFetched, setHasFetched] = useState(false);
   const [currency, setCurrency] = useState<string>('USD');
+  const [initialLoaded, setInitialLoaded] = useState(false);
 
   const fetchInsights = async () => {
     setLoading(true);
