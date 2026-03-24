@@ -114,7 +114,7 @@ export function FacebookConnectButton() {
   // Load Facebook SDK
   useEffect(() => {
     const initFB = () => {
-      window.FB.init({ appId: FB_APP_ID, cookie: true, xfbml: true, version: 'v21.0' });
+      window.FB.init({ appId: FB_APP_ID, cookie: true, xfbml: false, version: 'v21.0' });
       setSdkLoaded(true);
       console.log('Facebook SDK initialized successfully with App ID:', FB_APP_ID);
     };
