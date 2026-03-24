@@ -122,13 +122,15 @@ export default function Auth() {
               {loading ? 'Please wait...' : 'Sign In'}
             </Button>
 
-            <button
-              type="button"
-              onClick={() => setShowSignupInfo(true)}
-              className="text-sm text-primary hover:underline font-medium"
-            >
-              Don't have an account? Sign up
-            </button>
+            <div className="text-center">
+              <button
+                type="button"
+                onClick={() => setShowSignupInfo(true)}
+                className="text-sm text-primary hover:underline font-medium"
+              >
+                Don't have an account? Sign up
+              </button>
+            </div>
           </form>
 
           <div className="mt-6 pt-6 border-t">
