@@ -288,6 +288,7 @@ export function AdPerformanceDashboard({ autoFetch = false }: { autoFetch?: bool
                       <TableCell className="text-right">{formatCurrency(c.spend)}</TableCell>
                       <TableCell className="text-right">{c.ctr.toFixed(2)}%</TableCell>
                       <TableCell className="text-right">{formatCurrency(c.cpc)}</TableCell>
+                      <TableCell className="text-right">{c.conversions > 0 ? formatCurrency(c.spend / c.conversions) : '—'}</TableCell>
                       <TableCell className="text-right">
                         <Badge variant={c.conversions > 0 ? 'default' : 'secondary'}>
                           {c.conversions}
