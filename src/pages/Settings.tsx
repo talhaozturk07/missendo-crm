@@ -13,6 +13,7 @@ import { BatchWebPConverter } from '@/components/BatchWebPConverter';
 import { ThemeSelector } from '@/components/ThemeSelector';
 import { FacebookConnectButton } from '@/components/FacebookConnectButton';
 import { AdPerformanceDashboard } from '@/components/AdPerformanceDashboard';
+import { ConnectionDiagnostics } from '@/components/ConnectionDiagnostics';
 
 export default function Settings() {
   const { profile, isSuperAdmin } = useAuth();
