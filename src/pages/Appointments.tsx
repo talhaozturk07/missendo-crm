@@ -160,7 +160,7 @@ export default function Appointments() {
   };
 
   return (
-    <Layout>
+    <>
       <div className="space-y-4 md:space-y-6">
         <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
           <div>
@@ -512,6 +512,6 @@ export default function Appointments() {
           )}
         </DialogContent>
       </Dialog>
-    </Layout>
+    </>
   );
 }

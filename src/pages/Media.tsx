@@ -215,11 +215,11 @@ export default function Media() {
 
   if (authLoading) {
     return (
-      <Layout>
+      <>
         <div className="flex items-center justify-center min-h-[60vh]">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary" />
         </div>
-      </Layout>
+      </>
     );
   }
 
@@ -228,7 +228,7 @@ export default function Media() {
   }
 
   return (
-    <Layout>
+    <>
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <div>
@@ -438,6 +438,6 @@ export default function Media() {
           </div>
         </DialogContent>
       </Dialog>
-    </Layout>
+    </>
   );
 }

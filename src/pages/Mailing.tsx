@@ -830,7 +830,7 @@ export default function Mailing() {
   ];
 
   return (
-    <Layout>
+    <>
       <div className="space-y-6">
         {/* Header */}
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
@@ -2125,7 +2125,7 @@ export default function Mailing() {
           isDeleting={deleteCampaignMutation.isPending}
         />
       </div>
-    </Layout>
+    </>
   );
 }
 

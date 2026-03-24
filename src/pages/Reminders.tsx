@@ -590,7 +590,7 @@ export default function Reminders() {
   };
 
   return (
-    <Layout>
+    <>
       <div className="space-y-4 md:space-y-6">
         <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-4">
           <div>
@@ -1261,7 +1261,7 @@ export default function Reminders() {
           </AlertDialogContent>
         </AlertDialog>
       </div>
-    </Layout>
+    </>
   );
 }
 

@@ -402,7 +402,7 @@ export default function Accounting() {
   const allCategories = [...new Set([...INCOME_CATEGORIES, ...EXPENSE_CATEGORIES])];
 
   return (
-    <Layout>
+    <>
       <div className="space-y-4 md:space-y-6">
         <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-4">
           <div>
@@ -924,6 +924,6 @@ export default function Accounting() {
           </AlertDialogContent>
         </AlertDialog>
       </div>
-    </Layout>
+    </>
   );
 }

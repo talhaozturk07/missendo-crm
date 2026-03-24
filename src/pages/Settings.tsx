@@ -90,7 +90,7 @@ export default function Settings() {
   };
 
   return (
-    <Layout>
+    <>
       <div className="space-y-4 md:space-y-6">
         <div>
           <h1 className="text-2xl md:text-3xl font-bold">Settings</h1>
@@ -204,6 +204,6 @@ export default function Settings() {
         {/* Activity Logs - Super Admins Only */}
         {isSuperAdmin && <ActivityLogs />}
       </div>
-    </Layout>
+    </>
   );
 }

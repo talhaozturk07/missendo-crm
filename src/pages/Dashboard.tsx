@@ -271,7 +271,7 @@ export default function Dashboard() {
   };
 
   return (
-    <Layout>
+    <>
       <div className="space-y-6 md:space-y-8">
         {/* Header */}
         <div>
@@ -370,6 +370,6 @@ export default function Dashboard() {
           </Card>
         </div>
       </div>
-    </Layout>
+    </>
   );
 }

@@ -494,7 +494,7 @@ export default function Patients() {
       return matchesSearch && matchesClinic && matchesCountry;
     });
   }, [patients, searchQuery, clinicFilter, countryFilter]);
-  return <Layout>
+  return <>
       <div className="space-y-4 md:space-y-6">
         <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
           <div>
@@ -982,5 +982,5 @@ export default function Patients() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </Layout>;
+    </>;
 }
