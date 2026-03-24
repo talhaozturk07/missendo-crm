@@ -99,12 +99,11 @@ serve(async (req) => {
                   const selectedAdsets: Array<{id: string}> = org.fb_selected_adsets || [];
 
                   if (selectedCampaigns.length > 0) {
-                    // Campaign filter is active — strict mode
                     if (!adId) {
-                      // No ad_id means we can't verify campaign — REJECT
-                      console.log(`Lead REJECTED for org ${org.id}: campaign filter active but ad_id is null/missing (leadgen_id=${leadgenId})`);
-                      break;
-                    }
+                      // No ad_id = test lead or organic form — accept it
+                      console.log(`Test/organic lead ACCEPTED for org ${org.id} (no ad_id, leadgen_id=${leadgenId})`);
+                      // Skip campaign filtering, proceed to insert
+                    } else {
 
                     // We have ad_id, verify it belongs to a selected campaign
                     const userToken = org.fb_user_access_token || org.fb_page_access_token;
