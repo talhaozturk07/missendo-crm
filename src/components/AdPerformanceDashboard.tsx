@@ -88,6 +88,7 @@ export function AdPerformanceDashboard({ autoFetch = false }: { autoFetch?: bool
 
   const avgCtr = totals.impressions > 0 ? ((totals.clicks / totals.impressions) * 100).toFixed(2) : '0.00';
   const avgCpc = totals.clicks > 0 ? (totals.spend / totals.clicks).toFixed(2) : '0.00';
+  const avgCpl = totals.conversions > 0 ? (totals.spend / totals.conversions).toFixed(2) : '0.00';
 
   const formatNumber = (n: number) => n.toLocaleString();
   const formatCurrency = (n: number) => {
