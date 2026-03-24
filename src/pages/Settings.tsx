@@ -190,7 +190,7 @@ export default function Settings() {
         </Card>
 
         {/* Ad Performance Dashboard */}
-        <AdPerformanceDashboard />
+        <AdPerformanceDashboard autoFetch={fbConnected} />
 
         {/* Save Button */}
         <div className="flex justify-end">
