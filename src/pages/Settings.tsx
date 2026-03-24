@@ -36,7 +36,7 @@ export default function Settings() {
     try {
       const { data, error } = await supabase
         .from('organizations')
-        .select('wa_phone_number_id, wa_access_token')
+        .select('wa_phone_number_id, wa_access_token, fb_page_id')
         .eq('id', profile.organization_id)
         .single();
 
