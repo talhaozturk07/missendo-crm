@@ -19,8 +19,6 @@ export default function Settings() {
   const { profile, isSuperAdmin } = useAuth();
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
-  const [fbPageId, setFbPageId] = useState<string | null>(null);
-  const [fbConnected, setFbConnected] = useState(false);
   const [orgData, setOrgData] = useState({
     wa_phone_number_id: '',
     wa_access_token: '',
