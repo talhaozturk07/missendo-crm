@@ -423,28 +423,35 @@ export function FacebookConnectButton() {
     if (errorCode === 'NO_PAGES_FOR_AD_ACCOUNT') {
       return {
         title: 'No Pages Linked to This Ad Account',
-        description: 'The selected ad account has no promotable pages. Please choose another ad account.',
+        description: 'The selected ad account has no promotable pages. Please choose another ad account or ensure your Facebook Page is linked to this ad account in Meta Business Suite.',
       };
     }
 
     if (errorCode === 'NO_VISIBLE_PAGES_FOR_AD_ACCOUNT' || errorCode === 'NO_MANAGED_PAGES_FOR_AD_ACCOUNT') {
       return {
         title: 'Page Access Required',
-        description: 'This ad account has pages, but your Facebook user cannot manage them from this app. Grant page access in Meta Business Suite and try again.',
+        description: 'This ad account has pages, but your Facebook account does not have admin access to manage them. Please ensure you have admin or full control access to the page in Meta Business Suite, then try again.',
       };
     }
 
     if (errorCode === 'NO_PAGE_TOKEN') {
       return {
         title: 'Page Token Not Available',
-        description: 'The page was found but no page access token could be generated. Ensure this user has admin/page access in Business Suite.',
+        description: 'The page was found but a page access token could not be generated. Please ensure your Facebook account has admin access to this page in Meta Business Suite.',
       };
     }
 
-    if (!permissionInfo) return { title: 'Page Not Found', description: 'No Facebook page was found where you are an administrator.' };
-    if (permissionInfo.declined.length > 0) return { title: 'Permissions Declined', description: `Declined: ${permissionInfo.declined.join(', ')}` };
-    if (permissionInfo.missing.length > 0) return { title: 'Missing Permissions', description: `Missing: ${permissionInfo.missing.join(', ')}` };
-    return { title: 'Page Not Found', description: 'Make sure you are a page administrator in Meta Business Suite.' };
+    if (errorCode === 'NO_PAGES') {
+      return {
+        title: 'No Facebook Pages Found',
+        description: 'Your Facebook account does not manage any Facebook Pages. To use this feature, you need to be an admin of at least one Facebook Page. You can create or claim a page at facebook.com/pages/create.',
+      };
+    }
+
+    if (!permissionInfo) return { title: 'No Facebook Pages Found', description: 'Your Facebook account does not appear to manage any Facebook Pages. Please ensure you are an admin of at least one Facebook Page and try again.' };
+    if (permissionInfo.declined.length > 0) return { title: 'Permissions Declined', description: `You declined the following permissions: ${permissionInfo.declined.join(', ')}. These permissions are required for the integration to work. Please try again and accept all requested permissions.` };
+    if (permissionInfo.missing.length > 0) return { title: 'Missing Permissions', description: `The following permissions are missing: ${permissionInfo.missing.join(', ')}. Please reconnect and grant all requested permissions.` };
+    return { title: 'No Facebook Pages Found', description: 'Your Facebook account does not manage any Facebook Pages. Please ensure you have admin access to at least one page in Meta Business Suite.' };
   };
 
   return (
