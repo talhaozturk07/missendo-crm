@@ -42,7 +42,11 @@ The platform can only be used by organizations (clinics) that have signed a cont
 • Licensing, renting, or selling the platform to third parties`
   },
   {
-    title: "5. Facebook Integration",
+    title: "5. Third-Party Integrations",
+    content: `The following subsections (5a and 5b) describe optional third-party integrations available on the platform. The terms outlined in each subsection apply only to organizations that actively enable and use the respective integration. If your organization does not use a particular integration, the corresponding terms do not apply to you.`
+  },
+  {
+    title: "5a. Facebook Integration",
     content: `The platform integrates with Facebook Lead Ads. By using this integration:
 
 • You agree to connect your clinic's Facebook Page through Facebook OAuth authorization
@@ -50,6 +54,19 @@ The platform can only be used by organizations (clinics) that have signed a cont
 • You accept that data obtained from Facebook will only be used within the scope of clinic CRM operations
 • You commit to acting in accordance with Meta Platform Policies and Developer Terms
 • You understand that you can disconnect the Facebook connection at any time and that the associated data will be deleted`
+  },
+  {
+    title: "5b. WhatsApp Business API Integration",
+    content: `The platform integrates with the WhatsApp Business API to enable direct patient communication. By using this integration:
+
+• You agree to provide your WhatsApp Business API credentials (Phone Number ID and Access Token) to the platform
+• You confirm that you have the necessary rights and permissions to use the WhatsApp Business API for your clinic
+• You accept responsibility for obtaining appropriate patient consent before initiating WhatsApp communication
+• You commit to using WhatsApp messaging solely for legitimate clinic-patient interactions (appointment reminders, treatment follow-ups, patient inquiries)
+• You agree to comply with Meta's WhatsApp Business Policy and Commerce Policy at all times
+• You accept that data sent through WhatsApp will be processed according to Meta's data handling practices
+• You understand that you can remove your WhatsApp configuration at any time, and the associated credentials will be immediately deleted from the system
+• You commit to not using the WhatsApp integration for spam, unsolicited marketing, or any communication that violates applicable data protection regulations (KVKK/GDPR)`
   },
   {
     title: "6. Intellectual Property",

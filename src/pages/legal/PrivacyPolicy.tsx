@@ -54,7 +54,11 @@ d) Data Collected via Facebook Lead Ads:
 • Custom fields filled in the Facebook lead form (treatment preferences, country information, etc.)`
   },
   {
-    title: "4. Facebook Integration and Permissions",
+    title: "4. Third-Party Integrations",
+    content: `The following sections (4a and 4b) describe optional third-party integrations available on the platform. The terms outlined in each subsection apply only to organizations that actively enable and use the respective integration. If your organization does not use a particular integration, the corresponding terms do not apply to you.`
+  },
+  {
+    title: "4a. Facebook Integration and Permissions",
     content: `Our platform integrates with the Meta (Facebook) platform to enable clinics to automatically import potential patients from their Facebook Lead Ads campaigns into the CRM.
 
 As part of this integration, the following Facebook permissions are requested from clinic administrators:
@@ -90,6 +94,31 @@ Important Notes:
 • Facebook data is used solely within the scope of the CRM platform for clinic operations.
 • Users can disconnect their Facebook connection at any time, in which case the associated access tokens are deleted from the system.
 • No data obtained from Facebook is shared with third parties or used for advertising purposes.`
+  },
+  {
+    title: "4b. WhatsApp Business API Integration",
+    content: `Our platform integrates with the WhatsApp Business API (provided by Meta) to enable clinics to communicate with patients and leads directly through WhatsApp.
+
+As part of this integration, the following data is processed:
+
+a) WhatsApp Business Account Configuration:
+• Phone Number ID: The unique identifier of the clinic's WhatsApp Business phone number
+• Access Token: A secure token used to authenticate API requests to the WhatsApp Business API
+• These credentials are provided by the clinic administrator and stored securely in encrypted form
+
+b) Data Processed Through WhatsApp:
+• Patient and lead phone numbers (used as recipient identifiers)
+• Message content sent by clinic staff through the platform
+• Message delivery status and read receipts
+
+Important Notes:
+• WhatsApp Business API credentials are only configured with the explicit action of the clinic administrator.
+• Access tokens are stored securely in encrypted form and transmitted through secure channels.
+• WhatsApp communication is used solely for legitimate clinic-patient interactions such as appointment reminders, treatment follow-ups, and patient inquiries.
+• No patient data is shared with Meta/WhatsApp beyond what is required for message delivery.
+• The clinic is responsible for obtaining appropriate patient consent before initiating WhatsApp communication, in accordance with GDPR/KVKK requirements.
+• Organizations can remove their WhatsApp configuration at any time, and the associated credentials will be immediately deleted from the system.
+• All WhatsApp communications must comply with Meta's WhatsApp Business Policy and Commerce Policy.`
   },
   {
     title: "5. Data Collection Methods",
