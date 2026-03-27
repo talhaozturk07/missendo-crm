@@ -7,6 +7,7 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { Facebook, Check, X, Loader2, AlertCircle, ChevronRight, Filter, Settings2, ExternalLink, AlertTriangle, Building2, RefreshCw, CheckCircle2, XCircle } from 'lucide-react';
+import { AgreementCheckbox } from '@/components/AgreementCheckbox';
 import { format } from 'date-fns';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
@@ -77,6 +78,7 @@ export function FacebookConnectButton() {
   // Diagnostics state
   const [diagLoading, setDiagLoading] = useState(false);
   const [diagResult, setDiagResult] = useState<DiagnosticResult | null>(null);
+  const [fbAgreed, setFbAgreed] = useState(false);
 
   const checkDiagnostics = async (pageId: string) => {
     setDiagLoading(true);
@@ -542,7 +544,8 @@ export function FacebookConnectButton() {
                 <AlertCircle className="w-5 h-5 text-primary mt-0.5" />
                 <p className="text-sm text-muted-foreground">Connect with Facebook to automatically sync contacts from your lead forms into the CRM.</p>
               </div>
-              <Button onClick={handleFacebookLogin} disabled={loading || !sdkLoaded} className="w-full" style={{ backgroundColor: '#1877F2' }}>
+              <AgreementCheckbox agreed={fbAgreed} onAgreedChange={setFbAgreed} />
+              <Button onClick={handleFacebookLogin} disabled={loading || !sdkLoaded || !fbAgreed} className="w-full" style={{ backgroundColor: '#1877F2' }}>
                 {loading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Facebook className="w-4 h-4 mr-2" />}
                 {!sdkLoaded ? 'Loading...' : 'Connect with Facebook'}
               </Button>

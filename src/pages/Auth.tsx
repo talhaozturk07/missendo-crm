@@ -135,7 +135,7 @@ export default function Auth() {
           </form>
 
           <div className="mt-6 pt-6 border-t space-y-3">
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
               <Shield className="w-4 h-4" />
               <span>Secure healthcare CRM platform</span>
             </div>

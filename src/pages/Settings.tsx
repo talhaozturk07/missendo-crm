@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -7,18 +8,19 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Settings as SettingsIcon, Key, MessageSquare, Save } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { useState, useEffect } from 'react';
 import { ActivityLogs } from '@/components/ActivityLogs';
 import { BatchWebPConverter } from '@/components/BatchWebPConverter';
 import { ThemeSelector } from '@/components/ThemeSelector';
 import { FacebookConnectButton } from '@/components/FacebookConnectButton';
 import { AdPerformanceDashboard } from '@/components/AdPerformanceDashboard';
+import { AgreementCheckbox } from '@/components/AgreementCheckbox';
 
 
 export default function Settings() {
   const { profile, isSuperAdmin } = useAuth();
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
+  const [waAgreed, setWaAgreed] = useState(false);
   const [orgData, setOrgData] = useState({
     wa_phone_number_id: '',
     wa_access_token: '',
@@ -147,6 +149,7 @@ export default function Settings() {
                   Permanent access token for WhatsApp Business API
                 </p>
               </div>
+              <AgreementCheckbox agreed={waAgreed} onAgreedChange={setWaAgreed} />
             </CardContent>
           </Card>
         </div>
@@ -189,7 +192,7 @@ export default function Settings() {
 
         {/* Save Button */}
         <div className="flex justify-end">
-          <Button onClick={handleSave} disabled={loading} size="lg">
+          <Button onClick={handleSave} disabled={loading || !waAgreed} size="lg">
             <Save className="w-4 h-4 mr-2" />
             {loading ? 'Saving...' : 'Save Settings'}
           </Button>
