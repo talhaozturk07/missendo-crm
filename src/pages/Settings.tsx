@@ -149,6 +149,7 @@ export default function Settings() {
                   Permanent access token for WhatsApp Business API
                 </p>
               </div>
+              <AgreementCheckbox agreed={waAgreed} onAgreedChange={setWaAgreed} />
             </CardContent>
           </Card>
         </div>
