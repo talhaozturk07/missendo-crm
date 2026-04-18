@@ -722,6 +722,12 @@ export default function Treatments() {
                 </TableBody>
               </Table>
             </div>
+            <SimplePagination
+              currentPage={treatmentsPage}
+              totalItems={filteredTreatments.length}
+              pageSize={PAGE_SIZE}
+              onPageChange={setTreatmentsPage}
+            />
           </TabsContent>
 
           {/* Patient Treatments Tab */}
