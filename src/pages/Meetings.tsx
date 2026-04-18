@@ -576,6 +576,13 @@ export default function Meetings() {
           </Table>
         </div>
 
+        <SimplePagination
+          currentPage={page}
+          totalItems={filtered.length}
+          pageSize={MEETINGS_PAGE_SIZE}
+          onPageChange={setPage}
+        />
+
         {/* Stats */}
         {meetings.length > 0 && (
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
