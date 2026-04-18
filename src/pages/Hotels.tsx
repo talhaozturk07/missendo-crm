@@ -416,6 +416,11 @@ export default function Hotels() {
     return patientName.includes(searchLower) || hotelName.includes(searchLower);
   });
 
+  useEffect(() => { setHotelsPage(1); }, [searchQuery]);
+  useEffect(() => { setBookingsPage(1); }, [bookingSearchQuery]);
+  const pagedHotels = filteredHotels.slice((hotelsPage - 1) * PAGE_SIZE, hotelsPage * PAGE_SIZE);
+  const pagedBookings = filteredBookings.slice((bookingsPage - 1) * PAGE_SIZE, bookingsPage * PAGE_SIZE);
+
   return (
     <>
       <div className="space-y-4 md:space-y-6">
