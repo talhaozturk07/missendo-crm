@@ -121,7 +121,7 @@ serve(async (req) => {
     const authHeader = req.headers.get('Authorization');
     if (!authHeader) {
       return new Response(JSON.stringify({ error: 'Unauthorized' }), {
-        status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       });
     }
 
@@ -134,7 +134,7 @@ serve(async (req) => {
     if (userError || !user) {
       console.error('Auth error:', userError);
       return new Response(JSON.stringify({ error: 'Invalid token' }), {
-        status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       });
     }
 
@@ -146,7 +146,7 @@ serve(async (req) => {
     if (profileError || !profile?.organization_id) {
       console.error('Profile error:', profileError);
       return new Response(JSON.stringify({ error: 'User not assigned to organization' }), {
-        status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       });
     }
 
@@ -154,7 +154,7 @@ serve(async (req) => {
     const isAdmin = roles?.some(r => r.role === 'super_admin' || r.role === 'clinic_admin');
     if (!isAdmin) {
       return new Response(JSON.stringify({ error: 'Admin access required' }), {
-        status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       });
     }
 
@@ -167,7 +167,7 @@ serve(async (req) => {
         const { accessToken } = body;
         if (!accessToken) {
           return new Response(JSON.stringify({ error: 'Access token required' }), {
-            status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
           });
         }
 
@@ -178,7 +178,7 @@ serve(async (req) => {
         if (exchangeData.error) {
           console.error('Token exchange error:', exchangeData.error);
           return new Response(JSON.stringify({ error: exchangeData.error.message }), {
-            status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
           });
         }
 
@@ -198,7 +198,7 @@ serve(async (req) => {
         const { longLivedToken } = body;
         if (!longLivedToken) {
           return new Response(JSON.stringify({ error: 'Token required' }), {
-            status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
           });
         }
         const permissionCheck = await checkUserPermissions(longLivedToken);
@@ -211,7 +211,7 @@ serve(async (req) => {
         const { longLivedToken } = body;
         if (!longLivedToken) {
           return new Response(JSON.stringify({ error: 'Token required' }), {
-            status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
           });
         }
 
@@ -244,7 +244,7 @@ serve(async (req) => {
         const { longLivedToken, adAccountId } = body;
         if (!longLivedToken || !adAccountId) {
           return new Response(JSON.stringify({ error: 'Token and ad account ID required' }), {
-            status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
           });
         }
 
@@ -346,7 +346,7 @@ serve(async (req) => {
         const { longLivedToken } = body;
         if (!longLivedToken) {
           return new Response(JSON.stringify({ error: 'Long-lived token required' }), {
-            status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
           });
         }
 
@@ -391,7 +391,7 @@ serve(async (req) => {
         const { longLivedToken, adAccountId } = body;
         if (!longLivedToken) {
           return new Response(JSON.stringify({ error: 'Token required' }), {
-            status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
           });
         }
 
@@ -442,7 +442,7 @@ serve(async (req) => {
         const { longLivedToken, campaignIds } = body;
         if (!longLivedToken || !campaignIds || !Array.isArray(campaignIds)) {
           return new Response(JSON.stringify({ error: 'Token and campaign IDs required' }), {
-            status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
           });
         }
 
@@ -468,7 +468,7 @@ serve(async (req) => {
         const { longLivedToken, pageId, pageName, fbUserId, selectedAdAccountId, selectedCampaigns, selectedAdsets } = body;
         if (!longLivedToken || !pageId) {
           return new Response(JSON.stringify({ error: 'Token and page ID required' }), {
-            status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
           });
         }
 
@@ -479,7 +479,7 @@ serve(async (req) => {
         const pagesResult = await fetchUserPages(longLivedToken);
         if (pagesResult.error) {
           return new Response(JSON.stringify({ error: pagesResult.error }), {
-            status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
           });
         }
 
@@ -504,7 +504,7 @@ serve(async (req) => {
 
         if (!selectedPage) {
           return new Response(JSON.stringify({ error: 'Page not found or access denied.', errorCode: 'PAGE_NOT_FOUND' }), {
-            status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
           });
         }
 
@@ -513,7 +513,7 @@ serve(async (req) => {
             error: 'Could not retrieve page access token for this page. Please make sure this Facebook user has Page access in Meta Business Suite.',
             errorCode: 'NO_PAGE_TOKEN'
           }), {
-            status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
           });
         }
 
@@ -546,7 +546,7 @@ serve(async (req) => {
         if (updateError) {
           console.error('Database update error:', updateError);
           return new Response(JSON.stringify({ error: 'Failed to save connection' }), {
-            status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
           });
         }
 
@@ -570,7 +570,7 @@ serve(async (req) => {
 
         if (updateError) {
           return new Response(JSON.stringify({ error: 'Failed to update filters' }), {
-            status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
           });
         }
 
@@ -590,7 +590,7 @@ serve(async (req) => {
 
         if (orgError) {
           return new Response(JSON.stringify({ error: 'Failed to get filters' }), {
-            status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
           });
         }
 
@@ -678,7 +678,7 @@ serve(async (req) => {
 
         if (updateError) {
           return new Response(JSON.stringify({ error: 'Failed to disconnect' }), {
-            status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
           });
         }
 
@@ -690,7 +690,7 @@ serve(async (req) => {
 
       default:
         return new Response(JSON.stringify({ error: 'Invalid action' }), {
-          status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
         });
     }
 
@@ -698,7 +698,7 @@ serve(async (req) => {
     console.error('Facebook OAuth error:', error);
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     return new Response(JSON.stringify({ error: errorMessage }), {
-      status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     });
   }
 });
