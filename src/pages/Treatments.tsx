@@ -683,7 +683,7 @@ export default function Treatments() {
                       </TableCell>
                     </TableRow>
                   ) : (
-                    filteredTreatments.map((treatment) => (
+                    pagedTreatments.map((treatment) => (
                       <TableRow key={treatment.id} className="cursor-pointer hover:bg-muted/50" onClick={() => handleEdit(treatment)}>
                         <TableCell>
                           <div className="flex items-center gap-2">
@@ -909,7 +909,7 @@ export default function Treatments() {
                         </TableCell>
                       </TableRow>
                     ) : (
-                      filteredPatientTreatments.map((item) => (
+                      pagedPatientTreatments.map((item) => (
                         <TableRow key={item.id}>
                           <TableCell>
                             <div className="flex items-center gap-2">
