@@ -287,6 +287,9 @@ export default function Organizations() {
       .includes(searchQuery.toLowerCase())
   );
 
+  useEffect(() => { setPage(1); }, [searchQuery]);
+  const pagedOrganizations = filteredOrganizations.slice((page - 1) * ORG_PAGE_SIZE, page * ORG_PAGE_SIZE);
+
   // Show loading while authentication is being checked
   if (authLoading) {
     return (
