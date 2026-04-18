@@ -1,4 +1,7 @@
 import { useEffect, useState, useCallback, useRef } from 'react';
+import { SimplePagination } from '@/components/SimplePagination';
+
+const LEADS_PAGE_SIZE = 15;
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -100,6 +103,7 @@ export default function Leads() {
   const [isPolling, setIsPolling] = useState(false);
   const [noteEditLead, setNoteEditLead] = useState<string | null>(null);
   const [noteEditValue, setNoteEditValue] = useState('');
+  const [page, setPage] = useState(1);
   const pollingIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const { toast } = useToast();
 
@@ -430,6 +434,9 @@ export default function Leads() {
     return matchesSearch && matchesStatus && matchesClinic && matchesSource && matchesCountry;
   });
 
+  useEffect(() => { setPage(1); }, [searchQuery, statusFilter, clinicFilter, sourceFilter, countryFilter]);
+  const pagedLeads = filteredLeads.slice((page - 1) * LEADS_PAGE_SIZE, page * LEADS_PAGE_SIZE);
+
   return (
     <>
       <div className="space-y-4 md:space-y-6">
@@ -699,7 +706,7 @@ export default function Leads() {
                   </TableCell>
                 </TableRow>
               ) : (
-                filteredLeads.map((lead) => (
+                pagedLeads.map((lead) => (
                   <TableRow key={lead.id} className="cursor-pointer hover:bg-muted/50" onClick={() => handleEdit(lead)}>
                     <TableCell className="font-medium">
                       {lead.first_name} {lead.last_name}
@@ -855,6 +862,13 @@ export default function Leads() {
             </TableBody>
           </Table>
         </div>
+
+        <SimplePagination
+          currentPage={page}
+          totalItems={filteredLeads.length}
+          pageSize={LEADS_PAGE_SIZE}
+          onPageChange={setPage}
+        />
 
         <DeleteConfirmDialog
           open={!!deleteTarget}

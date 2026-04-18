@@ -45,6 +45,9 @@ import {
 } from '@/components/ui/alert-dialog';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
+import { SimplePagination } from '@/components/SimplePagination';
+
+const PAGE_SIZE = 15;
 
 interface CallLog {
   id: string;
@@ -150,6 +153,8 @@ export default function Reminders() {
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [editingReminder, setEditingReminder] = useState<Reminder | null>(null);
   const [activeTab, setActiveTab] = useState('reminders');
+  const [otherPage, setOtherPage] = useState(1);
+  const [otherSearch, setOtherSearch] = useState('');
   
   const [form, setForm] = useState({
     target_type: 'patient' as 'patient' | 'lead',
@@ -538,8 +543,13 @@ export default function Reminders() {
     return matchesSearch && matchesOrg;
   });
 
-  const pendingReminders = filteredReminders.filter(r => r.status === 'pending');
-  const otherReminders = filteredReminders.filter(r => r.status !== 'pending');
+  // 'sent' = email sent automatically when due; treat as still active until manually completed.
+  const pendingReminders = filteredReminders.filter(
+    r => r.status === 'pending' || r.status === 'sent'
+  );
+  const otherReminders = filteredReminders.filter(
+    r => r.status !== 'pending' && r.status !== 'sent'
+  );
 
   const quickCreateReminder = (targetType: 'patient' | 'lead', targetId: string, type: string) => {
     const target = targetType === 'patient' 
@@ -883,30 +893,68 @@ export default function Reminders() {
             )}
 
             {/* Other Reminders */}
-            {otherReminders.length > 0 && (
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <CheckCircle className="w-5 h-5" />
-                    Other Reminders ({otherReminders.length})
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-3">
-                    {otherReminders.map(reminder => (
-                      <ReminderCard 
-                        key={reminder.id} 
-                        reminder={reminder} 
-                        onComplete={() => handleMarkComplete(reminder.id)}
-                        onEdit={() => openEditDialog(reminder)}
-                        onDelete={() => { setDeletingId(reminder.id); setDeleteDialogOpen(true); }}
-                        onAddCallLog={handleAddCallLog}
+            {otherReminders.length > 0 && (() => {
+              const otherFiltered = otherReminders.filter(r => {
+                if (!otherSearch.trim()) return true;
+                const t = otherSearch.toLowerCase();
+                const target = r.patient
+                  ? `${r.patient.first_name} ${r.patient.last_name}`
+                  : r.lead
+                    ? `${r.lead.first_name} ${r.lead.last_name}`
+                    : '';
+                return (
+                  r.title.toLowerCase().includes(t) ||
+                  target.toLowerCase().includes(t) ||
+                  (r.notes || '').toLowerCase().includes(t)
+                );
+              });
+              const safePage = Math.min(otherPage, Math.max(1, Math.ceil(otherFiltered.length / PAGE_SIZE)));
+              const pageItems = otherFiltered.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE);
+              return (
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <CheckCircle className="w-5 h-5" />
+                      Other Reminders ({otherFiltered.length})
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="relative mb-4">
+                      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
+                      <Input
+                        placeholder="Search other reminders..."
+                        value={otherSearch}
+                        onChange={(e) => { setOtherSearch(e.target.value); setOtherPage(1); }}
+                        className="pl-10"
                       />
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-            )}
+                    </div>
+                    <div className="space-y-3">
+                      {pageItems.map(reminder => (
+                        <ReminderCard
+                          key={reminder.id}
+                          reminder={reminder}
+                          onComplete={() => handleMarkComplete(reminder.id)}
+                          onEdit={() => openEditDialog(reminder)}
+                          onDelete={() => { setDeletingId(reminder.id); setDeleteDialogOpen(true); }}
+                          onAddCallLog={handleAddCallLog}
+                        />
+                      ))}
+                      {otherFiltered.length === 0 && (
+                        <p className="text-sm text-muted-foreground text-center py-6">
+                          No reminders match your search
+                        </p>
+                      )}
+                    </div>
+                    <SimplePagination
+                      currentPage={safePage}
+                      totalItems={otherFiltered.length}
+                      pageSize={PAGE_SIZE}
+                      onPageChange={setOtherPage}
+                    />
+                  </CardContent>
+                </Card>
+              );
+            })()}
 
             {filteredReminders.length === 0 && !loading && (
               <Card>
@@ -1297,7 +1345,7 @@ function ReminderCard({
 
   const targetPhone = reminder.patient?.phone || reminder.lead?.phone || '';
   const isPatient = !!reminder.patient;
-  const isPending = reminder.status === 'pending';
+  const isPending = reminder.status === 'pending' || reminder.status === 'sent';
   const isOverdue = isPending && new Date(reminder.reminder_date) < new Date();
 
   const typeInfo = REMINDER_TYPES.find(t => t.value === reminder.reminder_type);

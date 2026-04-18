@@ -1,7 +1,10 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { SimplePagination } from '@/components/SimplePagination';
+
+const MEETINGS_PAGE_SIZE = 15;
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -123,6 +126,7 @@ export default function Meetings() {
   const [sortField, setSortField] = useState<SortField>('meeting_date');
   const [sortDir, setSortDir] = useState<SortDir>('desc');
   const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [page, setPage] = useState(1);
 
   const orgId = profile?.organization_id;
 
@@ -269,6 +273,9 @@ export default function Meetings() {
     });
     return list;
   }, [meetings, search, filterResult, filterCity, sortField, sortDir]);
+
+  useEffect(() => { setPage(1); }, [search, filterResult, filterCity]);
+  const pagedMeetings = filtered.slice((page - 1) * MEETINGS_PAGE_SIZE, page * MEETINGS_PAGE_SIZE);
 
   const SortHeader = ({ field, label }: { field: SortField; label: string }) => (
     <button
@@ -510,7 +517,7 @@ export default function Meetings() {
                   </TableCell>
                 </TableRow>
               ) : (
-                filtered.map(m => (
+                pagedMeetings.map(m => (
                   <TableRow key={m.id}>
                     <TableCell className="whitespace-nowrap">
                       {format(new Date(m.meeting_date), 'dd MMM yyyy')}
@@ -568,6 +575,13 @@ export default function Meetings() {
             </TableBody>
           </Table>
         </div>
+
+        <SimplePagination
+          currentPage={page}
+          totalItems={filtered.length}
+          pageSize={MEETINGS_PAGE_SIZE}
+          onPageChange={setPage}
+        />
 
         {/* Stats */}
         {meetings.length > 0 && (
