@@ -45,6 +45,9 @@ import {
 } from '@/components/ui/alert-dialog';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
+import { SimplePagination } from '@/components/SimplePagination';
+
+const PAGE_SIZE = 15;
 
 interface CallLog {
   id: string;
@@ -150,6 +153,8 @@ export default function Reminders() {
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [editingReminder, setEditingReminder] = useState<Reminder | null>(null);
   const [activeTab, setActiveTab] = useState('reminders');
+  const [otherPage, setOtherPage] = useState(1);
+  const [otherSearch, setOtherSearch] = useState('');
   
   const [form, setForm] = useState({
     target_type: 'patient' as 'patient' | 'lead',
