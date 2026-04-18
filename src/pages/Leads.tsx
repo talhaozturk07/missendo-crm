@@ -706,7 +706,7 @@ export default function Leads() {
                   </TableCell>
                 </TableRow>
               ) : (
-                filteredLeads.map((lead) => (
+                pagedLeads.map((lead) => (
                   <TableRow key={lead.id} className="cursor-pointer hover:bg-muted/50" onClick={() => handleEdit(lead)}>
                     <TableCell className="font-medium">
                       {lead.first_name} {lead.last_name}
