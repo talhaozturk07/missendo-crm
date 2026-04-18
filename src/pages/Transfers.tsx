@@ -1,4 +1,7 @@
 import { useEffect, useState } from 'react';
+import { SimplePagination } from '@/components/SimplePagination';
+
+const SERVICES_PAGE_SIZE = 15;
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -73,6 +76,7 @@ export default function Transfers() {
   const [searchQuery, setSearchQuery] = useState('');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [selectedTransfer, setSelectedTransfer] = useState<TransferService | null>(null);
+  const [servicesPage, setServicesPage] = useState(1);
   const { toast } = useToast();
 
   const [formData, setFormData] = useState({
