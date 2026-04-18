@@ -224,6 +224,9 @@ export default function Transfers() {
     `${transfer.company_name} ${transfer.service_type}`.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
+  useEffect(() => { setServicesPage(1); }, [searchQuery]);
+  const pagedServices = filteredServices.slice((servicesPage - 1) * SERVICES_PAGE_SIZE, servicesPage * SERVICES_PAGE_SIZE);
+
   // Categorize patient transfers by type
   const arrivalTransfers = patientTransfers.filter(t => t.transfer_type === 'arrival' || !t.transfer_type);
   const departureTransfers = patientTransfers.filter(t => t.transfer_type === 'departure');
