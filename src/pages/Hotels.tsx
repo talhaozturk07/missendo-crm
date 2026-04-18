@@ -1,4 +1,7 @@
 import { useEffect, useState } from 'react';
+import { SimplePagination } from '@/components/SimplePagination';
+
+const PAGE_SIZE = 15;
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -81,6 +84,8 @@ export default function Hotels() {
   const [isBookingDialogOpen, setIsBookingDialogOpen] = useState(false);
   const [selectedHotel, setSelectedHotel] = useState<HotelData | null>(null);
   const [selectedBooking, setSelectedBooking] = useState<PatientHotelBooking | null>(null);
+  const [hotelsPage, setHotelsPage] = useState(1);
+  const [bookingsPage, setBookingsPage] = useState(1);
   const { toast } = useToast();
 
   const [formData, setFormData] = useState({
