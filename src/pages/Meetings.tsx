@@ -274,6 +274,9 @@ export default function Meetings() {
     return list;
   }, [meetings, search, filterResult, filterCity, sortField, sortDir]);
 
+  useEffect(() => { setPage(1); }, [search, filterResult, filterCity]);
+  const pagedMeetings = filtered.slice((page - 1) * MEETINGS_PAGE_SIZE, page * MEETINGS_PAGE_SIZE);
+
   const SortHeader = ({ field, label }: { field: SortField; label: string }) => (
     <button
       className="flex items-center gap-1 hover:text-foreground transition-colors"
@@ -514,7 +517,7 @@ export default function Meetings() {
                   </TableCell>
                 </TableRow>
               ) : (
-                filtered.map(m => (
+                pagedMeetings.map(m => (
                   <TableRow key={m.id}>
                     <TableCell className="whitespace-nowrap">
                       {format(new Date(m.meeting_date), 'dd MMM yyyy')}
