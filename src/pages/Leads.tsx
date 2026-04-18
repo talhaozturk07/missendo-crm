@@ -1,4 +1,7 @@
 import { useEffect, useState, useCallback, useRef } from 'react';
+import { SimplePagination } from '@/components/SimplePagination';
+
+const LEADS_PAGE_SIZE = 15;
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -100,6 +103,7 @@ export default function Leads() {
   const [isPolling, setIsPolling] = useState(false);
   const [noteEditLead, setNoteEditLead] = useState<string | null>(null);
   const [noteEditValue, setNoteEditValue] = useState('');
+  const [page, setPage] = useState(1);
   const pollingIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const { toast } = useToast();
 
