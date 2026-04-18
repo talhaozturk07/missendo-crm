@@ -863,6 +863,13 @@ export default function Leads() {
           </Table>
         </div>
 
+        <SimplePagination
+          currentPage={page}
+          totalItems={filteredLeads.length}
+          pageSize={LEADS_PAGE_SIZE}
+          onPageChange={setPage}
+        />
+
         <DeleteConfirmDialog
           open={!!deleteTarget}
           onOpenChange={(open) => !open && setDeleteTarget(null)}
