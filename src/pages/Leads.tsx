@@ -434,6 +434,9 @@ export default function Leads() {
     return matchesSearch && matchesStatus && matchesClinic && matchesSource && matchesCountry;
   });
 
+  useEffect(() => { setPage(1); }, [searchQuery, statusFilter, clinicFilter, sourceFilter, countryFilter]);
+  const pagedLeads = filteredLeads.slice((page - 1) * LEADS_PAGE_SIZE, page * LEADS_PAGE_SIZE);
+
   return (
     <>
       <div className="space-y-4 md:space-y-6">
