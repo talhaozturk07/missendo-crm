@@ -637,6 +637,12 @@ export default function Transfers() {
                 </TableBody>
               </Table>
             </div>
+            <SimplePagination
+              currentPage={servicesPage}
+              totalItems={filteredServices.length}
+              pageSize={SERVICES_PAGE_SIZE}
+              onPageChange={setServicesPage}
+            />
           </TabsContent>
         </Tabs>
       </div>
