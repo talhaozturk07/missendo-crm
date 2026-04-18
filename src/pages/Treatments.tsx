@@ -1007,6 +1007,12 @@ export default function Treatments() {
                     )}
                   </TableBody>
                 </Table>
+                <SimplePagination
+                  currentPage={patientTreatmentsPage}
+                  totalItems={filteredPatientTreatments.length}
+                  pageSize={PAGE_SIZE}
+                  onPageChange={setPatientTreatmentsPage}
+                />
               </CardContent>
             </Card>
           </TabsContent>
