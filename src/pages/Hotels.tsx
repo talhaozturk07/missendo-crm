@@ -702,6 +702,12 @@ export default function Hotels() {
                 </TableBody>
               </Table>
             </div>
+            <SimplePagination
+              currentPage={hotelsPage}
+              totalItems={filteredHotels.length}
+              pageSize={PAGE_SIZE}
+              onPageChange={setHotelsPage}
+            />
           </TabsContent>
 
           {/* Patient Bookings Tab */}
@@ -838,6 +844,12 @@ export default function Hotels() {
                     )}
                   </TableBody>
                 </Table>
+                <SimplePagination
+                  currentPage={bookingsPage}
+                  totalItems={filteredBookings.length}
+                  pageSize={PAGE_SIZE}
+                  onPageChange={setBookingsPage}
+                />
               </CardContent>
             </Card>
           </TabsContent>
