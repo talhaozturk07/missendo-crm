@@ -450,8 +450,64 @@ export default function Leads() {
     return matchesSearch && matchesStatus && matchesClinic && matchesSource && matchesCountry;
   });
 
-  useEffect(() => { setPage(1); }, [searchQuery, statusFilter, clinicFilter, sourceFilter, countryFilter]);
-  const pagedLeads = filteredLeads.slice((page - 1) * LEADS_PAGE_SIZE, page * LEADS_PAGE_SIZE);
+  const sortedLeads = [...filteredLeads].sort((a, b) => {
+    if (!sortKey || !sortDirection) return 0;
+    const getVal = (lead: Lead): string | number => {
+      switch (sortKey) {
+        case 'name': return `${lead.first_name} ${lead.last_name}`.toLowerCase();
+        case 'contact': return (lead.email || lead.phone || '').toLowerCase();
+        case 'country': return (lead.country || '').toLowerCase();
+        case 'status': return (statusConfig[lead.status]?.label || lead.status).toLowerCase();
+        case 'notes': return (lead.notes || '').toLowerCase();
+        case 'clinic': return (organizations.find(o => o.id === lead.organization_id)?.name || '').toLowerCase();
+        case 'source': return (lead.source || '').toLowerCase();
+        case 'created_at': return new Date(lead.created_at).getTime();
+        default: return '';
+      }
+    };
+    const av = getVal(a);
+    const bv = getVal(b);
+    if (av < bv) return sortDirection === 'asc' ? -1 : 1;
+    if (av > bv) return sortDirection === 'asc' ? 1 : -1;
+    return 0;
+  });
+
+  useEffect(() => { setPage(1); }, [searchQuery, statusFilter, clinicFilter, sourceFilter, countryFilter, sortKey, sortDirection]);
+  const pagedLeads = sortedLeads.slice((page - 1) * LEADS_PAGE_SIZE, page * LEADS_PAGE_SIZE);
+
+  const handleExportExcel = () => {
+    if (sortedLeads.length === 0) {
+      toast({ title: 'No leads to export', variant: 'destructive' });
+      return;
+    }
+    const rows = sortedLeads.map(lead => ({
+      'First Name': lead.first_name,
+      'Last Name': lead.last_name,
+      'Email': lead.email || '',
+      'Phone': lead.phone,
+      'Country': lead.country || '',
+      'Status': statusConfig[lead.status]?.label || lead.status,
+      'Clinic': organizations.find(o => o.id === lead.organization_id)?.name || '',
+      'Source': lead.source || '',
+      'Notes': lead.notes || '',
+      'Appointment Date': lead.appointment_scheduled_date
+        ? format(new Date(lead.appointment_scheduled_date), 'dd/MM/yyyy')
+        : '',
+      'Will Come': lead.will_come === null ? '' : lead.will_come ? 'Yes' : 'No',
+      'Will Not Come Reason': lead.will_not_come_reason || '',
+      'Created At': format(new Date(lead.created_at), 'dd/MM/yyyy HH:mm'),
+    }));
+    const worksheet = XLSX.utils.json_to_sheet(rows);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Leads');
+    const colWidths = Object.keys(rows[0]).map(key => ({
+      wch: Math.max(key.length, ...rows.map(r => String(r[key as keyof typeof r] ?? '').length)) + 2,
+    }));
+    worksheet['!cols'] = colWidths;
+    const filename = `leads_${format(new Date(), 'yyyy-MM-dd_HHmm')}.xlsx`;
+    XLSX.writeFile(workbook, filename);
+    toast({ title: 'Export complete', description: `${rows.length} leads exported` });
+  };
 
   return (
     <>
