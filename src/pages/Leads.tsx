@@ -761,12 +761,6 @@ export default function Leads() {
                 </TableHead>
                 <TableHead>
                   <div className="flex items-center gap-1">
-                    <SortableHeader title="Location" sortKey="country" currentSortKey={sortKey} currentDirection={sortDirection} onSort={handleSort} />
-                    <ColumnFilter title="" options={countryOptions} selectedValues={countryFilter} onFilterChange={setCountryFilter} />
-                  </div>
-                </TableHead>
-                <TableHead>
-                  <div className="flex items-center gap-1">
                     <SortableHeader title="Status" sortKey="status" currentSortKey={sortKey} currentDirection={sortDirection} onSort={handleSort} />
                     <ColumnFilter title="" options={statusOptions} selectedValues={statusFilter} onFilterChange={setStatusFilter} />
                   </div>
