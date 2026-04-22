@@ -799,7 +799,7 @@ export default function Leads() {
                     Loading...
                   </TableCell>
                 </TableRow>
-              ) : filteredLeads.length === 0 ? (
+              ) : sortedLeads.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={9} className="text-center py-8 text-muted-foreground">
                     No leads found
