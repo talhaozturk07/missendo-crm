@@ -842,7 +842,8 @@ export default function Patients() {
                 </div>
               </form>
             </DialogContent>
-          </Dialog>
+            </Dialog>
+          </div>
         </div>
 
         <div className="flex gap-4 items-center">
