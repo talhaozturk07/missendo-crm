@@ -15,16 +15,18 @@ import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { Plus, Search, User, Phone, Mail, Upload, X, Building2, Pencil, Trash2, FileText, DollarSign, PhoneCall } from 'lucide-react';
+import { Plus, Search, User, Phone, Mail, Upload, X, Building2, Pencil, Trash2, FileText, DollarSign, PhoneCall, Download } from 'lucide-react';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { PatientDetails } from '@/components/PatientDetails';
 import { ColumnFilter } from '@/components/ColumnFilter';
+import { SortableHeader, type SortDirection } from '@/components/SortableHeader';
 import { PatientCard } from '@/components/PatientCard';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import * as XLSX from 'xlsx';
 type CrmStatus = 'new_lead' | 'called_answered' | 'called_no_answer' | 'waiting_photos' | 'photos_received' | 'treatment_plan_sent' | 'follow_up' | 'confirmed' | 'completed' | 'lost';
 
 const CRM_STATUS_CONFIG: Record<CrmStatus, { label: string; color: string; bgColor: string }> = {
@@ -118,6 +120,20 @@ export default function Patients() {
   const [isFromLead, setIsFromLead] = useState(false);
   const [callCounts, setCallCounts] = useState<Record<string, { count: number; lastCallAt: string | null; lastResult: string | null }>>({});
   const [page, setPage] = useState(1);
+  const [sortKey, setSortKey] = useState<string | null>('created_at');
+  const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
+
+  const handleSort = (key: string) => {
+    if (sortKey !== key) {
+      setSortKey(key);
+      setSortDirection('asc');
+    } else if (sortDirection === 'asc') {
+      setSortDirection('desc');
+    } else {
+      setSortKey(null);
+      setSortDirection(null);
+    }
+  };
   useEffect(() => {
     if (authLoading) return;
     if (!user) return;
@@ -499,8 +515,64 @@ export default function Patients() {
     });
   }, [patients, searchQuery, clinicFilter, countryFilter]);
 
-  useEffect(() => { setPage(1); }, [searchQuery, clinicFilter, countryFilter]);
-  const pagedPatients = filteredPatients.slice((page - 1) * PATIENTS_PAGE_SIZE, page * PATIENTS_PAGE_SIZE);
+  useEffect(() => { setPage(1); }, [searchQuery, clinicFilter, countryFilter, sortKey, sortDirection]);
+
+  const sortedPatients = useMemo(() => {
+    if (!sortKey || !sortDirection) return filteredPatients;
+    const arr = [...filteredPatients];
+    const getVal = (p: Patient): string | number => {
+      switch (sortKey) {
+        case 'patient': return `${p.first_name} ${p.last_name}`.toLowerCase();
+        case 'crm_status': return (p.crm_status ? CRM_STATUS_CONFIG[p.crm_status]?.label : '').toLowerCase();
+        case 'calls': return callCounts[p.id]?.count || 0;
+        case 'clinic': return (p.organizations?.name || '').toLowerCase();
+        case 'country': return (p.country || '').toLowerCase();
+        case 'created_at': return new Date(p.created_at).getTime();
+        default: return '';
+      }
+    };
+    arr.sort((a, b) => {
+      const av = getVal(a);
+      const bv = getVal(b);
+      if (av < bv) return sortDirection === 'asc' ? -1 : 1;
+      if (av > bv) return sortDirection === 'asc' ? 1 : -1;
+      return 0;
+    });
+    return arr;
+  }, [filteredPatients, sortKey, sortDirection, callCounts]);
+
+  const pagedPatients = sortedPatients.slice((page - 1) * PATIENTS_PAGE_SIZE, page * PATIENTS_PAGE_SIZE);
+
+  const handleExportExcel = () => {
+    if (sortedPatients.length === 0) {
+      toast({ title: 'No patients to export', variant: 'destructive' });
+      return;
+    }
+    const rows = sortedPatients.map(p => ({
+      'First Name': p.first_name,
+      'Last Name': p.last_name,
+      'Email': p.email || '',
+      'Phone': p.phone,
+      'Gender': p.gender || '',
+      'Date of Birth': p.date_of_birth ? format(new Date(p.date_of_birth), 'dd/MM/yyyy') : '',
+      'Country': p.country || '',
+      'Medical Condition': p.medical_condition || '',
+      'CRM Status': p.crm_status ? CRM_STATUS_CONFIG[p.crm_status]?.label : '',
+      'Clinic': p.organizations?.name || '',
+      'Treatments': (p.patient_treatments || []).map(pt => pt.treatments?.name).filter(Boolean).join(', '),
+      'Calls': callCounts[p.id]?.count || 0,
+      'Last Call': callCounts[p.id]?.lastCallAt ? format(new Date(callCounts[p.id]!.lastCallAt!), 'dd/MM/yyyy HH:mm') : '',
+      'Created At': format(new Date(p.created_at), 'dd/MM/yyyy HH:mm'),
+    }));
+    const ws = XLSX.utils.json_to_sheet(rows);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Patients');
+    ws['!cols'] = Object.keys(rows[0]).map(key => ({
+      wch: Math.max(key.length, ...rows.map(r => String(r[key as keyof typeof r] ?? '').length)) + 2,
+    }));
+    XLSX.writeFile(wb, `patients_${format(new Date(), 'yyyy-MM-dd_HHmm')}.xlsx`);
+    toast({ title: 'Export complete', description: `${rows.length} patients exported` });
+  };
 
   return <>
       <div className="space-y-4 md:space-y-6">
@@ -509,13 +581,18 @@ export default function Patients() {
             <h1 className="text-2xl md:text-3xl font-bold">Patients</h1>
             <p className="text-sm md:text-base text-muted-foreground mt-1 md:mt-2">Manage patient records and treatment history</p>
           </div>
-          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-            <DialogTrigger asChild>
-              <Button onClick={resetForm} className="w-full sm:w-auto">
-                <Plus className="w-4 h-4 mr-2" />
-                Add Patient
-              </Button>
-            </DialogTrigger>
+          <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+            <Button variant="outline" onClick={handleExportExcel} className="w-full sm:w-auto">
+              <Download className="w-4 h-4 mr-2" />
+              Export Excel
+            </Button>
+            <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+              <DialogTrigger asChild>
+                <Button onClick={resetForm} className="w-full sm:w-auto">
+                  <Plus className="w-4 h-4 mr-2" />
+                  Add Patient
+                </Button>
+              </DialogTrigger>
             <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
               <DialogHeader>
                 <DialogTitle>{selectedPatient ? 'Edit Patient' : 'Add New Patient'}</DialogTitle>
@@ -765,7 +842,8 @@ export default function Patients() {
                 </div>
               </form>
             </DialogContent>
-          </Dialog>
+            </Dialog>
+          </div>
         </div>
 
         <div className="flex gap-4 items-center">
@@ -801,7 +879,7 @@ export default function Patients() {
               <div className="text-center py-8 text-muted-foreground">
                 Loading patients...
               </div>
-            ) : filteredPatients.length === 0 ? (
+            ) : sortedPatients.length === 0 ? (
               <div className="text-center py-8 text-muted-foreground">
                 No patients found
               </div>
@@ -828,17 +906,27 @@ export default function Patients() {
             <Table className="min-w-[900px]">
               <TableHeader>
                 <TableRow>
-                  <TableHead>Patient</TableHead>
-                  <TableHead>CRM Status</TableHead>
-                  <TableHead className="text-center w-20">Calls</TableHead>
+                  <TableHead>
+                    <SortableHeader title="Patient" sortKey="patient" currentSortKey={sortKey} currentDirection={sortDirection} onSort={handleSort} />
+                  </TableHead>
+                  <TableHead>
+                    <SortableHeader title="CRM Status" sortKey="crm_status" currentSortKey={sortKey} currentDirection={sortDirection} onSort={handleSort} />
+                  </TableHead>
+                  <TableHead className="text-center w-20">
+                    <SortableHeader title="Calls" sortKey="calls" currentSortKey={sortKey} currentDirection={sortDirection} onSort={handleSort} />
+                  </TableHead>
+                  <TableHead>
+                    <div className="flex items-center gap-1">
+                      <SortableHeader title="Country" sortKey="country" currentSortKey={sortKey} currentDirection={sortDirection} onSort={handleSort} />
+                      <ColumnFilter title="" options={countryOptions} selectedValues={countryFilter} onFilterChange={setCountryFilter} />
+                    </div>
+                  </TableHead>
                   {isSuperAdmin && (
-                    <TableHead className="p-0">
-                      <ColumnFilter
-                        title="Clinic"
-                        options={clinicOptions}
-                        selectedValues={clinicFilter}
-                        onFilterChange={setClinicFilter}
-                      />
+                    <TableHead>
+                      <div className="flex items-center gap-1">
+                        <SortableHeader title="Clinic" sortKey="clinic" currentSortKey={sortKey} currentDirection={sortDirection} onSort={handleSort} />
+                        <ColumnFilter title="" options={clinicOptions} selectedValues={clinicFilter} onFilterChange={setClinicFilter} />
+                      </div>
                     </TableHead>
                   )}
                   <TableHead>Actions</TableHead>
@@ -846,11 +934,11 @@ export default function Patients() {
               </TableHeader>
               <TableBody>
                 {loading ? <TableRow>
-                    <TableCell colSpan={isSuperAdmin ? 5 : 4} className="text-center py-8">
+                    <TableCell colSpan={isSuperAdmin ? 6 : 5} className="text-center py-8">
                       Loading patients...
                     </TableCell>
-                  </TableRow> : filteredPatients.length === 0 ? <TableRow>
-                    <TableCell colSpan={isSuperAdmin ? 5 : 4} className="text-center py-8 text-muted-foreground">
+                  </TableRow> : sortedPatients.length === 0 ? <TableRow>
+                    <TableCell colSpan={isSuperAdmin ? 6 : 5} className="text-center py-8 text-muted-foreground">
                       No patients found
                     </TableCell>
                   </TableRow> : pagedPatients.map(patient => <TableRow key={patient.id} className="cursor-pointer hover:bg-muted/50">
@@ -917,6 +1005,9 @@ export default function Patients() {
                           );
                         })()}
                       </TableCell>
+                      <TableCell onClick={() => { setSelectedPatient(patient); setShowPatientDetails(true); }}>
+                        <span className="text-sm">{patient.country || '-'}</span>
+                      </TableCell>
                       {isSuperAdmin && <TableCell onClick={() => { setSelectedPatient(patient); setShowPatientDetails(true); }}>
                           <Badge variant="outline" className="flex items-center gap-1 w-fit">
                             <Building2 className="w-3 h-3" />
@@ -954,7 +1045,7 @@ export default function Patients() {
 
         <SimplePagination
           currentPage={page}
-          totalItems={filteredPatients.length}
+          totalItems={sortedPatients.length}
           pageSize={PATIENTS_PAGE_SIZE}
           onPageChange={setPage}
         />
