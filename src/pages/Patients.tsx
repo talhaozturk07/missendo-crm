@@ -906,17 +906,27 @@ export default function Patients() {
             <Table className="min-w-[900px]">
               <TableHeader>
                 <TableRow>
-                  <TableHead>Patient</TableHead>
-                  <TableHead>CRM Status</TableHead>
-                  <TableHead className="text-center w-20">Calls</TableHead>
+                  <TableHead>
+                    <SortableHeader title="Patient" sortKey="patient" currentSortKey={sortKey} currentDirection={sortDirection} onSort={handleSort} />
+                  </TableHead>
+                  <TableHead>
+                    <SortableHeader title="CRM Status" sortKey="crm_status" currentSortKey={sortKey} currentDirection={sortDirection} onSort={handleSort} />
+                  </TableHead>
+                  <TableHead className="text-center w-20">
+                    <SortableHeader title="Calls" sortKey="calls" currentSortKey={sortKey} currentDirection={sortDirection} onSort={handleSort} />
+                  </TableHead>
+                  <TableHead>
+                    <div className="flex items-center gap-1">
+                      <SortableHeader title="Country" sortKey="country" currentSortKey={sortKey} currentDirection={sortDirection} onSort={handleSort} />
+                      <ColumnFilter title="" options={countryOptions} selectedValues={countryFilter} onFilterChange={setCountryFilter} />
+                    </div>
+                  </TableHead>
                   {isSuperAdmin && (
-                    <TableHead className="p-0">
-                      <ColumnFilter
-                        title="Clinic"
-                        options={clinicOptions}
-                        selectedValues={clinicFilter}
-                        onFilterChange={setClinicFilter}
-                      />
+                    <TableHead>
+                      <div className="flex items-center gap-1">
+                        <SortableHeader title="Clinic" sortKey="clinic" currentSortKey={sortKey} currentDirection={sortDirection} onSort={handleSort} />
+                        <ColumnFilter title="" options={clinicOptions} selectedValues={clinicFilter} onFilterChange={setClinicFilter} />
+                      </div>
                     </TableHead>
                   )}
                   <TableHead>Actions</TableHead>
@@ -924,11 +934,11 @@ export default function Patients() {
               </TableHeader>
               <TableBody>
                 {loading ? <TableRow>
-                    <TableCell colSpan={isSuperAdmin ? 5 : 4} className="text-center py-8">
+                    <TableCell colSpan={isSuperAdmin ? 6 : 5} className="text-center py-8">
                       Loading patients...
                     </TableCell>
-                  </TableRow> : filteredPatients.length === 0 ? <TableRow>
-                    <TableCell colSpan={isSuperAdmin ? 5 : 4} className="text-center py-8 text-muted-foreground">
+                  </TableRow> : sortedPatients.length === 0 ? <TableRow>
+                    <TableCell colSpan={isSuperAdmin ? 6 : 5} className="text-center py-8 text-muted-foreground">
                       No patients found
                     </TableCell>
                   </TableRow> : pagedPatients.map(patient => <TableRow key={patient.id} className="cursor-pointer hover:bg-muted/50">
