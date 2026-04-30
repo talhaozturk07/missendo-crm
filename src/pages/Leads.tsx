@@ -973,6 +973,16 @@ export default function Leads() {
           title="Delete Lead"
           description={`Are you sure you want to delete the lead ${deleteTarget?.first_name} ${deleteTarget?.last_name}? This action cannot be undone.`}
         />
+
+        <LeadImportDialog
+          open={isImportOpen}
+          onOpenChange={setIsImportOpen}
+          onImported={loadLeads}
+          organizationId={profile?.organization_id}
+          isSuperAdmin={isSuperAdmin}
+          organizations={organizations}
+          createdBy={profile?.id}
+        />
       </div>
     </>
   );
