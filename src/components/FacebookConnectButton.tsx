@@ -205,8 +205,10 @@ export function FacebookConnectButton() {
           setLoading(false);
         })();
       }, {
-        scope: 'pages_show_list,pages_read_engagement,leads_retrieval,pages_manage_metadata,ads_read',
-        return_scopes: true, auth_type: 'rerequest', display: 'popup',
+        scope: 'pages_show_list,pages_read_engagement,leads_retrieval,pages_manage_metadata',
+        return_scopes: true,
+        auth_type: 'rerequest',
+        enable_profile_selector: true,
       });
     } catch (e) {
       window.clearTimeout(loginTimeout);
