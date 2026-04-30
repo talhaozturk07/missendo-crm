@@ -210,7 +210,6 @@ export function FacebookConnectButton() {
         auth_type: 'rerequest',
         enable_profile_selector: true,
         display: 'popup',
-ешь
       });
     } catch (e) {
       window.clearTimeout(loginTimeout);
