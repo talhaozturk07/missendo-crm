@@ -171,6 +171,8 @@ export function FacebookConnectButton() {
               });
               if (exchangeRes.error) throw new Error(exchangeRes.error.message || 'Token exchange failed');
               const { longLivedToken: token, permissions } = exchangeRes.data;
+              console.log('[FB] Granted scopes from authResponse:', response.authResponse.grantedScopes);
+              console.log('[FB] Permissions from backend:', permissions);
               setLongLivedToken(token);
               if (permissions?.missing?.length > 0 || permissions?.declined?.length > 0) {
                 setPermissionInfo(permissions);
@@ -209,6 +211,7 @@ export function FacebookConnectButton() {
         return_scopes: true,
         auth_type: 'rerequest',
         enable_profile_selector: true,
+        display: 'popup',
       });
     } catch (e) {
       window.clearTimeout(loginTimeout);
