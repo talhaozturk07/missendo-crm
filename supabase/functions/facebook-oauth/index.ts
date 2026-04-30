@@ -296,7 +296,7 @@ serve(async (req) => {
             errorCode: 'NO_PAGES_FOR_AD_ACCOUNT',
             permissions: permissionCheck,
           }), {
-            status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
           });
         }
 
@@ -375,7 +375,7 @@ serve(async (req) => {
           return new Response(JSON.stringify({ 
             pages: [], error: errorMessage, errorCode, permissions: permissionCheck, debugInfo: pagesResult.debugInfo
           }), {
-            status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
           });
         }
 
