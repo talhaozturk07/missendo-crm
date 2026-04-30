@@ -101,6 +101,7 @@ export default function Leads() {
   const [sourceFilter, setSourceFilter] = useState<string[]>([]);
   const [countryFilter, setCountryFilter] = useState<string[]>([]);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isImportOpen, setIsImportOpen] = useState(false);
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
   const [isConverting, setIsConverting] = useState(false);
   const [isPolling, setIsPolling] = useState(false);
