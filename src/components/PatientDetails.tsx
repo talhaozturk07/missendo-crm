@@ -884,9 +884,12 @@ export function PatientDetails({ patientId, onClose }: PatientDetailsProps) {
     try {
       const paymentAmount = parseFloat(paymentForm.amount);
       
+      const orgId = patientInfo?.organization_id || profile?.organization_id;
+      if (!orgId) throw new Error('Missing organization for patient');
+
       const { error } = await supabase.from('patient_payments').insert([{
         patient_id: patientId,
-        organization_id: profile?.organization_id,
+        organization_id: orgId,
         amount: paymentAmount,
         payment_date: paymentForm.payment_date,
         payment_method: paymentForm.payment_method || null,
@@ -912,7 +915,7 @@ export function PatientDetails({ patientId, onClose }: PatientDetailsProps) {
       // Also add to income_expenses for accounting
       const patientFullName = `${patientInfo?.first_name || ''} ${patientInfo?.last_name || ''}`.trim();
       await supabase.from('income_expenses').insert([{
-        organization_id: profile?.organization_id,
+        organization_id: orgId,
         type: 'income',
         category: paymentForm.payment_type === 'downpayment' ? 'Downpayment' : 'Clinic Payment',
         amount: paymentAmount,

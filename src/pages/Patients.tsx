@@ -199,15 +199,25 @@ export default function Patients() {
 
   const loadCallCounts = async () => {
     try {
-      const { data, error } = await supabase
-        .from('reminder_call_logs')
-        .select('id, called_at, call_result, reminder_id, reminders!inner(patient_id)')
-        .order('called_at', { ascending: false });
-
-      if (error) throw error;
+      // Paginate to bypass the default 1000-row cap so counts stay accurate
+      const pageSize = 1000;
+      let from = 0;
+      const all: any[] = [];
+      while (true) {
+        const { data, error } = await supabase
+          .from('reminder_call_logs')
+          .select('id, called_at, call_result, reminder_id, reminders!inner(patient_id)')
+          .order('called_at', { ascending: false })
+          .range(from, from + pageSize - 1);
+        if (error) throw error;
+        const batch = data || [];
+        all.push(...batch);
+        if (batch.length < pageSize) break;
+        from += pageSize;
+      }
 
       const counts: Record<string, { count: number; lastCallAt: string | null; lastResult: string | null }> = {};
-      (data || []).forEach((log: any) => {
+      all.forEach((log: any) => {
         const patientId = log.reminders?.patient_id;
         if (!patientId) return;
         if (!counts[patientId]) {
